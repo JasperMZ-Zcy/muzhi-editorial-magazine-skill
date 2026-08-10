@@ -1,0 +1,84 @@
+{
+    "schema_version":  1,
+    "skill_name":  "editorial-magazine-explainer-producer",
+    "version":  "1.0.0",
+    "generated_at_utc":  "2026-08-10T13:44:06.6610733Z",
+    "file_count":  15,
+    "files":  [
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/agents/openai.yaml",
+                      "sha256":  "f44b82fd0ee80efeb0981cd3dd2309ba7a7b3e522517472b8ff50528f09c3f76",
+                      "bytes":  382
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/flow-shot-contract.template.json",
+                      "sha256":  "0136e46394fca244df37267941e18fc14e09119f9ce2ce3d83a45922f869c052",
+                      "bytes":  711
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/gate2-manifest.template.json",
+                      "sha256":  "8f3aa0ae81465c124c3835b388d1ce892d47c7f3ce3d5da094cd3e171bb497b2",
+                      "bytes":  1566
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/project-contract.template.json",
+                      "sha256":  "d91ecd3dc947cb26f1d26c765b62d39f86fcc9d261207ce5391728843c953388",
+                      "bytes":  6671
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/qa-manifest.template.json",
+                      "sha256":  "71b68193a3ecaed7ac85f879bebbce262d2589c660a8e65cac1febe226980d54",
+                      "bytes":  2276
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/revision-lock.template.json",
+                      "sha256":  "b7558444b76a375dd8abe06ae842c286d8b85e03170a1142f442ed10df849db8",
+                      "bytes":  2864
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/shot-contract.template.json",
+                      "sha256":  "845ae006d35c57e228e2dc1f88bff1fe9a579660b280147644db8ff6f9d69ac5",
+                      "bytes":  2265
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/references/flow-audio-and-composition.md",
+                      "sha256":  "971d82029da0f084ee80b3539578de252643dd0b36dbb1cc27d784d3009737b0",
+                      "bytes":  4866
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/references/revision-qa-and-closure.md",
+                      "sha256":  "664a9235478d770b86978716ae2f6eec6f611d59f81fc4f33bd602b09d248820",
+                      "bytes":  5366
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/references/semantic-motion-and-typography.md",
+                      "sha256":  "35bbcb9a9c9b9101d7c9815c1e3a36ea32fe646b408fa8ffb2f7895b5184d659",
+                      "bytes":  6549
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/references/validated-case-and-qa.md",
+                      "sha256":  "6abe4b30a937c4fca01567261c880e75fd45e86f6b4be43093d3b17f885daaf0",
+                      "bytes":  4506
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/references/workflow-and-review-gates.md",
+                      "sha256":  "a695a6a4195bd5378c283d0d818fb20a800f08ae7833b327c83017dc7f0685e8",
+                      "bytes":  6822
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/scripts/check_environment.ps1",
+                      "sha256":  "27eb538cf6503ffbeef3e7b02c94e2a61b3dc2aef5413756a8853e3e7e6df08d",
+                      "bytes":  3933
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/scripts/validate_editorial_project.py",
+                      "sha256":  "d650645527d39b569590e4180819db44e4ec72f8cb83c3654712db89340a4341",
+                      "bytes":  76939
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/SKILL.md",
+                      "sha256":  "ec44d51886ef72970697b85e7db697f45f68906e667d045b37fce5830b08aee7",
+                      "bytes":  14686
+                  }
+              ]
+}

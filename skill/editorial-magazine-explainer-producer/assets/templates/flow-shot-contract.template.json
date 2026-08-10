@@ -1,0 +1,23 @@
+{
+  "shot_id": "S03",
+  "spoken_text": "__FILL__",
+  "target_duration_seconds": 8,
+  "action_cue": 12.3,
+  "no_text_reference": true,
+  "reference_path": "__FILL__",
+  "reference_sha256": "__FILL_64_HEX__",
+  "production_prompt_complete": true,
+  "prompt_path": "__FILL__",
+  "prompt_sha256": "__FILL_64_HEX__",
+  "return_path": "__FILL__",
+  "returned": false,
+  "actual_content_mapping": "__FILL_AFTER_RETURN__",
+  "raw_path": "__FILL_AFTER_RETURN__",
+  "raw_sha256": "__FILL_AFTER_RETURN__",
+  "normalized_path": "__FILL_AFTER_RETURN__",
+  "normalized_sha256": "__FILL_AFTER_RETURN__",
+  "content_inspected": false,
+  "source_audio_removed": false,
+  "action_landmark_seconds": 0,
+  "placed_action_cue": 0
+}

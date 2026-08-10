@@ -1,0 +1,82 @@
+{
+  "shot_id": "S01",
+  "start_seconds": 0,
+  "end_seconds": 3,
+  "spoken_text": "__FILL__",
+  "semantic_proposition": "__FILL_ONE_PROPOSITION__",
+  "subject": "__FILL__",
+  "action": "__FILL__",
+  "acted_on_object": "__FILL__",
+  "turn": "__FILL_OR_NONE__",
+  "result": "__FILL__",
+  "viewer_takeaway": "__FILL__",
+  "shot_family": "independent_component_animation",
+  "family_reason": "__FILL__",
+  "stable_primary_composition_seconds": 3,
+  "sub_1_5_second_exception": "",
+  "cues": {
+    "scene_start": 0,
+    "action_cue": 0.8,
+    "text_cue": 0.9
+  },
+  "layers": [
+    {
+      "layer_id": "S01-L01",
+      "role": "semantic_actor",
+      "core_semantic_actor": true,
+      "asset_source": "generated_component",
+      "independently_addressable": true,
+      "lifecycle": {
+        "enter": "__FILL__",
+        "settle": "__FILL__",
+        "act_or_receive": "__FILL__",
+        "yield": "__FILL__",
+        "resolve": "__FILL__",
+        "exit": "__FILL__"
+      }
+    }
+  ],
+  "stages": [
+    {
+      "stage_id": "S01-P01",
+      "core_semantic_action": true,
+      "caption_text": "__FILL__",
+      "explanation_required": true,
+      "explanation_phrase": "__FILL_NON_DUPLICATE_JUDGMENT__",
+      "explanation_role": "judgment",
+      "explanation_form": "focus_ring",
+      "adds_information_beyond_caption": true,
+      "spoken_keyword_cue": 0.9,
+      "action_cue": 0.8,
+      "text_cue": 0.9,
+      "recognizable_hold_seconds": 0.8
+    }
+  ],
+  "semantic_containers": [
+    {
+      "container_id": "S01-C01",
+      "kind": "speech_bubble",
+      "communicative": true,
+      "text": "__FILL_LOCAL_TYPE__",
+      "decorative_reason": ""
+    }
+  ],
+  "previous_primary_exit_defined": true,
+  "caption_layout": {
+    "approved_text": "__FILL__",
+    "highlight_phrase": "__FILL_OR_NONE__",
+    "single_line_required": true,
+    "approved_two_line_exception": "",
+    "final_resolution_boundary_test_required": true
+  },
+  "transition_in": "__FILL__",
+  "transition_out": "__FILL__",
+  "required_assets": ["__FILL__"],
+  "prohibited_shortcuts": [
+    "whole_image_motion_as_semantic_animation",
+    "generated_readable_chinese",
+    "empty_communicative_container",
+    "production_markers_in_final_frame"
+  ],
+  "gate_2_status": "waiting_user_review"
+}

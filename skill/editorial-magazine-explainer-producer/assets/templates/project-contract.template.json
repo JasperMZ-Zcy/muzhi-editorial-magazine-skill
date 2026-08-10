@@ -1,0 +1,219 @@
+{
+  "schema_version": "1.0",
+  "pipeline": "editorial-magazine-explainer",
+  "project_id": "__FILL__",
+  "project_root": "__FILL_ABSOLUTE_PROJECT_ROOT__",
+  "title": "__FILL__",
+  "authorization": {
+    "execution_confirmed": false,
+    "publication_authorized": false,
+    "confirmed_at": "__FILL__"
+  },
+  "sources": {
+    "input_mode": "recording_plus_approved_copy",
+    "original_audio": "__FILL__",
+    "approved_copy": "__FILL__",
+    "input_srt": "__FILL_OR_NULL__",
+    "originals_preserved": false
+  },
+  "master_clock": {
+    "audio_path": "__FILL__",
+    "duration_seconds": 0,
+    "sample_rate_hz": 48000,
+    "sample_count": 0,
+    "sha256": "__FILL__",
+    "locked": false,
+    "time_stretch_allowed": false
+  },
+  "captions": {
+    "srt_path": "__FILL__",
+    "count": 0,
+    "first_start_seconds": 0,
+    "last_end_seconds": 0,
+    "last_sentence_verified": false,
+    "sha256": "__FILL__",
+    "locked": false,
+    "single_line_default": true,
+    "automatic_wrap_allowed": false,
+    "longest_caption_boundary_test_required": true
+  },
+  "voice": {
+    "profile": "muzhi_bright_youth",
+    "duration_and_sample_count_must_match_master": true,
+    "report_required": true,
+    "formal_path": "__FILL_WHEN_RENDER_READY__",
+    "formal_sha256": "__FILL_WHEN_RENDER_READY__",
+    "report_path": "__FILL_WHEN_RENDER_READY__",
+    "report_sha256": "__FILL_WHEN_RENDER_READY__",
+    "input_sample_count": 0,
+    "output_sample_count": 0,
+    "input_duration_seconds": 0,
+    "output_duration_seconds": 0,
+    "integrated_lufs": 0,
+    "loudness_range_lu": 0,
+    "true_peak_dbtp": 0,
+    "processing_chain_version": "__FILL_WHEN_RENDER_READY__",
+    "sample_count_matches_master": false,
+    "duration_matches_master": false
+  },
+  "bgm": {
+    "required": true,
+    "user_opt_out": false,
+    "no_lyrics": true,
+    "speech_first": true,
+    "fade_in_out": true,
+    "sidechain_ducking": true,
+    "provenance_required": true,
+    "formal_path": "__FILL_WHEN_RENDER_READY__",
+    "formal_sha256": "__FILL_WHEN_RENDER_READY__",
+    "mix_report_path": "__FILL_WHEN_RENDER_READY__",
+    "mix_report_sha256": "__FILL_WHEN_RENDER_READY__",
+    "source_and_license": "__FILL_WHEN_RENDER_READY__",
+    "license_status": "__FILL_WHEN_RENDER_READY__",
+    "provenance_recorded": false
+  },
+  "gates": {
+    "gate_0": "approved",
+    "gate_1": "in_progress",
+    "gate_2": "not_started",
+    "gate_2_5_flow_handoff": "not_started",
+    "gate_3": "not_started",
+    "gate_4_publication": "not_started"
+  },
+  "gate_evidence": {
+    "gate_1": {
+      "internal_consolidation_complete": false,
+      "completed_at": "__FILL__"
+    },
+    "gate_2": {
+      "manifest_path": "__FILL__",
+      "manifest_sha256": "__FILL__",
+      "all_shots_included": false,
+      "whole_package_user_approved": false,
+      "approved_by": "牧之",
+      "user_approval_quote": "__FILL__",
+      "approved_at": "__FILL__"
+    },
+    "gate_3": {
+      "qa_manifest_path": "__FILL__",
+      "qa_manifest_sha256": "__FILL__",
+      "user_approved_master": false,
+      "approved_by": "牧之",
+      "user_approval_quote": "__FILL__",
+      "approved_at": "__FILL__"
+    }
+  },
+  "local_production_started": false,
+  "final_composition_started": false,
+  "shots": [
+    {
+      "shot_id": "S01",
+      "start_seconds": 0,
+      "end_seconds": 3,
+      "spoken_text": "__FILL__",
+      "semantic_proposition": "__FILL__",
+      "subject": "__FILL__",
+      "action": "__FILL__",
+      "acted_on_object": "__FILL__",
+      "turn": "__FILL_OR_NONE__",
+      "result": "__FILL__",
+      "viewer_takeaway": "__FILL__",
+      "shot_family": "independent_component_animation",
+      "family_reason": "__FILL__",
+      "stable_primary_composition_seconds": 3,
+      "sub_1_5_second_exception": "",
+      "cues": {
+        "scene_start": 0,
+        "action_cue": 0.8,
+        "text_cue": 0.9
+      },
+      "layers": [
+        {
+          "layer_id": "S01-L01",
+          "role": "semantic_actor",
+          "core_semantic_actor": true,
+          "asset_source": "generated_component",
+          "independently_addressable": true,
+          "lifecycle": {
+            "enter": "__FILL__",
+            "settle": "__FILL__",
+            "act_or_receive": "__FILL__",
+            "yield": "__FILL__",
+            "resolve": "__FILL__",
+            "exit": "__FILL__"
+          }
+        }
+      ],
+      "stages": [
+        {
+          "stage_id": "S01-P01",
+          "core_semantic_action": true,
+          "caption_text": "__FILL__",
+          "explanation_required": true,
+          "explanation_phrase": "__FILL_NON_DUPLICATE_JUDGMENT__",
+          "explanation_role": "judgment",
+          "explanation_form": "focus_ring",
+          "adds_information_beyond_caption": true,
+          "spoken_keyword_cue": 0.9,
+          "action_cue": 0.8,
+          "text_cue": 0.9,
+          "recognizable_hold_seconds": 0.8
+        }
+      ],
+      "semantic_containers": [
+        {
+          "container_id": "S01-C01",
+          "kind": "speech_bubble",
+          "communicative": true,
+          "text": "__FILL_LOCAL_TYPE__",
+          "decorative_reason": ""
+        }
+      ],
+      "previous_primary_exit_defined": true,
+      "caption_layout": {
+        "approved_text": "__FILL__",
+        "highlight_phrase": "__FILL_OR_NONE__",
+        "single_line_required": true,
+        "approved_two_line_exception": "",
+        "final_resolution_boundary_test_required": true
+      },
+      "transition_in": "__FILL__",
+      "transition_out": "__FILL__",
+      "required_assets": ["__FILL__"],
+      "prohibited_shortcuts": [
+        "whole_image_motion_as_semantic_animation",
+        "generated_readable_chinese",
+        "empty_communicative_container",
+        "production_markers_in_final_frame"
+      ],
+      "gate_2_status": "waiting_user_review"
+    }
+  ],
+  "flow": {
+    "handoff_created": false,
+    "all_flow_shots_gate_2_approved": false,
+    "return_received": false,
+    "raw_files_preserved": false,
+    "content_inspected": false,
+    "source_audio_must_be_removed": true,
+    "source_audio_removed": false,
+    "normalized_to_project_spec": false,
+    "action_landmark_aligned_to_action_cue": false,
+    "content_mapping_required": true,
+    "shots": []
+  },
+  "publication": {
+    "mode": "not_started",
+    "user_confirmed_published": false,
+    "user_confirmation_quote": "__FILL_WHEN_PUBLISHED__",
+    "user_confirmation_at": "__FILL_WHEN_PUBLISHED__",
+    "target_platforms": [],
+    "platform_records": [],
+    "tracking_nodes": []
+  },
+  "delivery": {
+    "desktop_review_directory": "__FILL_DESKTOP_REVIEW_ROOT__",
+    "copy_not_move": true,
+    "sha256_match_required": true
+  }
+}

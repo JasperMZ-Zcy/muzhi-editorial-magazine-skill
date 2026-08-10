@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "project_id": "__FILL__",
+  "project_root": "__FILL_ABSOLUTE_PROJECT_ROOT__",
+  "status": "waiting_user_review",
+  "expected_shot_count": 1,
+  "reviewed_shot_count": 0,
+  "all_shot_ids": ["S01"],
+  "shot_entries": [
+    {
+      "shot_id": "S01",
+      "shot_family": "independent_component_animation",
+      "contract_path": "__FILL__",
+      "contract_sha256": "__FILL_64_HEX__",
+      "script_txt_path": "__FILL__",
+      "script_txt_sha256": "__FILL_64_HEX__",
+      "keyframe_path": "__FILL__",
+      "keyframe_sha256": "__FILL_64_HEX__",
+      "multi_stage_keyframe_required": true,
+      "multi_stage_keyframe_present": false,
+      "independent_layer_plan_present": false,
+      "layer_plan_path": "__FILL__",
+      "layer_plan_sha256": "__FILL_64_HEX__"
+    }
+  ],
+  "whole_film_artifacts": {
+    "keyframe_overview": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    "rhythm_density_audit": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    "typography_role_and_form_audit": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    "empty_semantic_container_audit": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    "layer_exit_and_metaphor_audit": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    "flow_shot_list": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    "gate2_checklist": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"}
+  },
+  "approval": {
+    "whole_package_user_approved": false,
+    "approved_by": "牧之",
+    "user_approval_quote": "__FILL__",
+    "approved_at": "__FILL__"
+  }
+}

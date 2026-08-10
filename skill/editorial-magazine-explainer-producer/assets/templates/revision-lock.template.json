@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "project_id": "__FILL__",
+  "project_root": "__FILL_ABSOLUTE_PROJECT_ROOT__",
+  "revision": "v2",
+  "based_on_version": "v1",
+  "rollback_version_path": "__FILL_EXISTING_COMPLETE_ROLLBACK__",
+  "rollback_verified_complete": false,
+  "user_request": "__FILL_VERBATIM_OR_PRECISE_SUMMARY__",
+  "approved_at": "__FILL__",
+  "user_approval_confirmed": false,
+  "allowed_changes": ["__FILL_ONLY_THE_REQUESTED_CHANGE__"],
+  "forbidden_changes": [
+    "master_clock",
+    "caption_text_and_timing",
+    "approved_flow_files_speed_actions_crop_and_timing"
+  ],
+  "lock_domains": [
+    {"domain": "audio", "applicable": true, "locked": true, "change_allowed": false, "fingerprint_roles": ["narration_master"], "invariants": ["sample_count", "duration", "sha256"]},
+    {"domain": "captions", "applicable": true, "locked": true, "change_allowed": false, "fingerprint_roles": ["caption_source"], "invariants": ["text", "count", "first_last_timing", "sha256"]},
+    {"domain": "timeline", "applicable": true, "locked": true, "change_allowed": false, "fingerprint_roles": ["timeline_manifest"], "invariants": ["scene_boundaries", "action_cues", "text_cues"]},
+    {"domain": "flow", "applicable": true, "locked": true, "change_allowed": false, "fingerprint_roles": ["flow_sources_manifest", "flow_placement_manifest"], "invariants": ["source_files", "normalized_files", "speed", "crop_window", "absolute_timing", "action_order"]},
+    {"domain": "bgm", "applicable": true, "locked": true, "change_allowed": false, "fingerprint_roles": ["bgm_master", "mix_manifest"], "invariants": ["source", "fade", "ducking", "timing"]},
+    {"domain": "components", "applicable": true, "locked": false, "change_allowed": true, "fingerprint_roles": [], "invariants": ["only_approved_local_component_changes"]},
+    {"domain": "typography", "applicable": true, "locked": true, "change_allowed": false, "fingerprint_roles": ["typography_manifest"], "invariants": ["wording", "timing", "forms"]}
+  ],
+  "locked_fingerprints": [
+    {"role": "narration_master", "path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    {"role": "caption_source", "path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    {"role": "timeline_manifest", "path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    {"role": "flow_sources_manifest", "path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    {"role": "flow_placement_manifest", "path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    {"role": "bgm_master", "path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    {"role": "mix_manifest", "path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    {"role": "typography_manifest", "path": "__FILL__", "sha256": "__FILL_64_HEX__"}
+  ],
+  "required_regression_checks": [
+    "locked_fingerprint_mismatch_count_is_zero",
+    "changed_continuous_ranges_reviewed",
+    "full_encoded_master_watched"
+  ]
+}

@@ -1,0 +1,9 @@
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+.pytest_cache/
+test-results/
+skill/editorial-magazine-explainer-producer/config/local.json
