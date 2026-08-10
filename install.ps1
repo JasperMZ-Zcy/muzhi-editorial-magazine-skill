@@ -90,7 +90,9 @@ function Assert-ReleaseIntegrity {
             throw "发行文件哈希不匹配：$relative"
         }
     }
-    foreach ($file in Get-ChildItem -Recurse -File -LiteralPath $sourceRoot) {
+    foreach ($file in Get-ChildItem -Recurse -File -LiteralPath $sourceRoot | Where-Object {
+        $_.FullName -notmatch '[\\/]__pycache__[\\/]' -and $_.Extension -ne '.pyc'
+    }) {
         $relative = $file.FullName.Substring($repoRoot.Length + 1).Replace('\', '/')
         if (-not $listedFiles.Contains($relative)) {
             throw "Skill 源目录含有未列入发行清单的文件，拒绝安装：$relative"

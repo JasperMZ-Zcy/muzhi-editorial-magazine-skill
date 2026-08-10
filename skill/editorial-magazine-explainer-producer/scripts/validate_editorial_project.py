@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -46,7 +47,10 @@ REQUIRED_QA_CHECKS = (
     "locked_fingerprints_match",
     "all_semantic_stages_reviewed",
     "all_flow_and_full_illustrations_reviewed",
+    "asset_class_scale_and_center_audit",
     "longest_captions_final_resolution",
+    "caption_hierarchy_contrast_and_safe_placement",
+    "caption_main_visual_non_occlusion",
     "empty_semantic_containers_absent",
     "production_markers_absent",
     "typography_mobile_readability_and_non_duplication",
@@ -55,6 +59,11 @@ REQUIRED_QA_CHECKS = (
     "full_encoded_master_watched",
     "desktop_copy_hash_match",
 )
+QA_1_1_CHECKS = {
+    "asset_class_scale_and_center_audit",
+    "caption_hierarchy_contrast_and_safe_placement",
+    "caption_main_visual_non_occlusion",
+}
 SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 PLACEHOLDER_RE = re.compile(r"^__FILL(?:_OR_[A-Z]+|_[A-Z0-9_]+)?__$")
 REQUIRED_GATE_KEYS = (
@@ -145,6 +154,27 @@ def numeric(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
+def schema_at_least(data: dict[str, Any], major: int, minor: int) -> bool:
+    raw = str(data.get("schema_version", "0.0")).strip()
+    match = re.fullmatch(r"(\d+)\.(\d+)(?:\.\d+)?", raw)
+    if not match:
+        return False
+    return (int(match.group(1)), int(match.group(2))) >= (major, minor)
+
+
+def require_exact_numeric_range(
+    value: Any,
+    expected: tuple[float, float],
+    path: str,
+    errors: list[str],
+) -> None:
+    if not isinstance(value, list) or len(value) != 2 or not all(numeric(item) for item in value):
+        errors.append(f"{path}: must be a numeric [min, max] range")
+        return
+    if tuple(value) != expected:
+        errors.append(f"{path}: must equal [{expected[0]}, {expected[1]}] for this pipeline")
+
+
 def normalize_text(value: Any) -> str:
     if not isinstance(value, str):
         return ""
@@ -200,6 +230,29 @@ def verify_path_hash(
     actual = sha256_file(file_path)
     if actual.lower() != expected_sha.lower():
         errors.append(f"{path}.sha256: actual file hash does not match")
+
+
+def load_verified_evidence_manifest(
+    root: Path | None,
+    raw_path: Any,
+    expected_sha: Any,
+    path: str,
+    errors: list[str],
+    verify_files: bool,
+) -> dict[str, Any] | None:
+    verify_path_hash(root, raw_path, expected_sha, path, errors, verify_files)
+    if not verify_files or root is None or not is_filled(raw_path):
+        return None
+    file_path = Path(str(raw_path))
+    if not file_path.is_absolute():
+        file_path = root / file_path
+    if not file_path.is_file():
+        return None
+    try:
+        return load_json(file_path)
+    except ValueError as exc:
+        errors.append(str(exc))
+        return None
 
 
 def validate_shot_contract(
@@ -779,6 +832,7 @@ def validate_revision(data: dict[str, Any], verify_files: bool = False) -> list[
 
     domains = as_list(data.get("lock_domains"), "revision_lock.lock_domains", errors)
     seen_domains: set[str] = set()
+    change_allowed_domains: set[str] = set()
     for index, raw_domain in enumerate(domains):
         path = f"revision_lock.lock_domains[{index}]"
         domain = as_object(raw_domain, path, errors)
@@ -790,6 +844,8 @@ def validate_revision(data: dict[str, Any], verify_files: bool = False) -> list[
         applicable = domain.get("applicable") is True
         locked = domain.get("locked") is True
         change_allowed = domain.get("change_allowed") is True
+        if isinstance(name, str) and applicable and change_allowed:
+            change_allowed_domains.add(name)
         if applicable and locked == change_allowed:
             errors.append(f"{path}: applicable domain must be exactly one of locked or change_allowed")
         if not applicable:
@@ -810,6 +866,164 @@ def validate_revision(data: dict[str, Any], verify_files: bool = False) -> list[
                 errors.append(f"{path}.invariants: missing Flow locks {sorted(missing)}")
     if seen_domains != REQUIRED_LOCK_DOMAINS:
         errors.append(f"revision_lock.lock_domains: require exactly {sorted(REQUIRED_LOCK_DOMAINS)}")
+
+    if schema_at_least(data, 1, 1) and change_allowed_domains & {"components", "typography"}:
+        visual = as_object(data.get("visual_change_contract"), "revision_lock.visual_change_contract", errors)
+        flow_policy = as_object(visual.get("flow_policy"), "revision_lock.visual_change_contract.flow_policy", errors)
+        require_true(flow_policy, "locked_unchanged", "revision_lock.visual_change_contract.flow_policy", errors)
+        expected_flow_count = flow_policy.get("expected_clip_count")
+        if not isinstance(expected_flow_count, int) or isinstance(expected_flow_count, bool) or expected_flow_count < 0:
+            errors.append("revision_lock.visual_change_contract.flow_policy.expected_clip_count: must be non-negative")
+        flow_invariants = as_list(
+            flow_policy.get("invariants"),
+            "revision_lock.visual_change_contract.flow_policy.invariants",
+            errors,
+        )
+        required_visual_flow_invariants = {"frame_size", "crop_window", "speed", "action_order", "absolute_timing"}
+        missing_visual_flow = required_visual_flow_invariants - {
+            value for value in flow_invariants if isinstance(value, str)
+        }
+        if missing_visual_flow:
+            errors.append(
+                "revision_lock.visual_change_contract.flow_policy.invariants: "
+                f"missing {sorted(missing_visual_flow)}"
+            )
+
+        if "components" in change_allowed_domains:
+            local_scale = as_object(
+                visual.get("local_component_scale_percent"),
+                "revision_lock.visual_change_contract.local_component_scale_percent",
+                errors,
+            )
+            require_exact_numeric_range(
+                local_scale.get("target_range"),
+                (8, 12),
+                "revision_lock.visual_change_contract.local_component_scale_percent.target_range",
+                errors,
+            )
+            for key in (
+                "per_shot_records_required",
+                "below_range_requires_reason",
+                "outside_or_zero_requires_approved_reason",
+                "center_concentration_required",
+            ):
+                require_true(
+                    local_scale,
+                    key,
+                    "revision_lock.visual_change_contract.local_component_scale_percent",
+                    errors,
+                )
+
+            full_scale = as_object(
+                visual.get("full_illustration_inner_scale_percent"),
+                "revision_lock.visual_change_contract.full_illustration_inner_scale_percent",
+                errors,
+            )
+            require_exact_numeric_range(
+                full_scale.get("target_range"),
+                (4, 6),
+                "revision_lock.visual_change_contract.full_illustration_inner_scale_percent.target_range",
+                errors,
+            )
+            for key in ("per_shot_records_required", "outside_or_zero_requires_approved_reason", "stay_inside_original_frame"):
+                require_true(
+                    full_scale,
+                    key,
+                    "revision_lock.visual_change_contract.full_illustration_inner_scale_percent",
+                    errors,
+                )
+            if full_scale.get("critical_crop_allowed") is not False:
+                errors.append(
+                    "revision_lock.visual_change_contract.full_illustration_inner_scale_percent.critical_crop_allowed: "
+                    "must be false"
+                )
+
+        if "typography" in change_allowed_domains:
+            caption_move = as_object(
+                visual.get("caption_centerward_move"),
+                "revision_lock.visual_change_contract.caption_centerward_move",
+                errors,
+            )
+            for key in (
+                "required",
+                "baseline_manifest_required",
+                "per_caption_baseline_and_final_position_required",
+                "per_shot_avoidance_required",
+                "platform_safe_area_required",
+                "zero_or_reverse_move_requires_approved_reason",
+                "explanatory_typography_locked",
+            ):
+                require_true(caption_move, key, "revision_lock.visual_change_contract.caption_centerward_move", errors)
+            minimum_increase = caption_move.get("minimum_font_increase_px")
+            font_change_required = caption_move.get("font_size_change_required")
+            if font_change_required is True and (not numeric(minimum_increase) or minimum_increase <= 0):
+                errors.append(
+                    "revision_lock.visual_change_contract.caption_centerward_move.minimum_font_increase_px: "
+                    "must be greater than zero when font-size change is required"
+                )
+            elif font_change_required is False:
+                if minimum_increase != 0:
+                    errors.append(
+                        "revision_lock.visual_change_contract.caption_centerward_move.minimum_font_increase_px: "
+                        "must be zero when font-size change is outside the approved scope"
+                    )
+                require_filled(
+                    caption_move,
+                    "font_size_change_exception_reason",
+                    "revision_lock.visual_change_contract.caption_centerward_move",
+                    errors,
+                )
+            elif font_change_required is not True:
+                errors.append(
+                    "revision_lock.visual_change_contract.caption_centerward_move.font_size_change_required: "
+                    "must be boolean"
+                )
+            if "explanatory_typography_manifest" not in fingerprint_roles:
+                errors.append(
+                    "revision_lock.locked_fingerprints: typography changes require an "
+                    "explanatory_typography_manifest fingerprint"
+                )
+
+            contrast = as_object(
+                visual.get("caption_contrast_strategy"),
+                "revision_lock.visual_change_contract.caption_contrast_strategy",
+                errors,
+            )
+            for key in ("foreground_style", "edge_or_backing_style", "keyword_style"):
+                require_filled(contrast, key, "revision_lock.visual_change_contract.caption_contrast_strategy", errors)
+            contrast_target = contrast.get("minimum_contrast_ratio_target")
+            if not numeric(contrast_target) or contrast_target < 4.5:
+                errors.append(
+                    "revision_lock.visual_change_contract.caption_contrast_strategy.minimum_contrast_ratio_target: "
+                    "must be at least 4.5"
+                )
+            require_true(
+                contrast,
+                "style_matches_editorial_animation",
+                "revision_lock.visual_change_contract.caption_contrast_strategy",
+                errors,
+            )
+
+        protection = as_object(
+            visual.get("main_visual_protection"),
+            "revision_lock.visual_change_contract.main_visual_protection",
+            errors,
+        )
+        protected_roles = {
+            value for value in as_list(
+                protection.get("protected_roles"),
+                "revision_lock.visual_change_contract.main_visual_protection.protected_roles",
+                errors,
+            ) if isinstance(value, str)
+        }
+        required_roles = {"people", "core_actions", "result_states", "required_explanatory_typography"}
+        if not required_roles.issubset(protected_roles):
+            errors.append(
+                "revision_lock.visual_change_contract.main_visual_protection.protected_roles: "
+                f"missing {sorted(required_roles - protected_roles)}"
+            )
+        if protection.get("overlap_allowed") is not False:
+            errors.append("revision_lock.visual_change_contract.main_visual_protection.overlap_allowed: must be false")
 
     if verify_files and project_root is not None:
         rollback = Path(str(data.get("rollback_version_path", "")))
@@ -909,6 +1123,70 @@ def validate_gate2_manifest(data: dict[str, Any], verify_files: bool = False) ->
     return errors
 
 
+def validate_caption_audit_record(
+    record: dict[str, Any],
+    path: str,
+    frame_width: Any,
+    frame_height: Any,
+) -> list[str]:
+    errors: list[str] = []
+    require_filled(record, "cue_id", path, errors)
+    require_filled(record, "shot_id", path, errors)
+    baseline = record.get("baseline_font_px")
+    final = record.get("final_font_px")
+    required_increase = record.get("required_increase_px")
+    exception = record.get("exception_approved") is True
+    if not all(numeric(value) for value in (baseline, final, required_increase)):
+        errors.append(f"{path}: baseline/final/required font values must be numeric")
+    elif final < baseline + required_increase and not exception:
+        errors.append(f"{path}: caption font did not meet the required increase")
+
+    coordinate_keys = ("baseline_x_px", "baseline_y_px", "final_x_px", "final_y_px")
+    coordinates = [record.get(key) for key in coordinate_keys]
+    for key, value in zip(coordinate_keys, coordinates):
+        if not numeric(value):
+            errors.append(f"{path}.{key}: must be numeric")
+    if numeric(frame_width) and numeric(frame_height) and all(numeric(value) for value in coordinates):
+        baseline_x, baseline_y, final_x, final_y = coordinates
+        for key, value, maximum in (
+            ("baseline_x_px", baseline_x, frame_width),
+            ("final_x_px", final_x, frame_width),
+            ("baseline_y_px", baseline_y, frame_height),
+            ("final_y_px", final_y, frame_height),
+        ):
+            if not 0 <= value <= maximum:
+                errors.append(f"{path}.{key}: must stay inside the final encoded frame")
+        center_x = frame_width / 2
+        center_y = frame_height / 2
+        baseline_distance = math.hypot(baseline_x - center_x, baseline_y - center_y)
+        final_distance = math.hypot(final_x - center_x, final_y - center_y)
+        calculated_centerward = baseline_distance - final_distance
+        reported_centerward = record.get("centerward_offset_px")
+        if not numeric(reported_centerward):
+            errors.append(f"{path}.centerward_offset_px: must be numeric")
+        elif abs(reported_centerward - calculated_centerward) > 0.5:
+            errors.append(
+                f"{path}.centerward_offset_px: must match the baseline/final coordinate calculation"
+            )
+        if calculated_centerward <= 0 and not exception:
+            errors.append(f"{path}: zero or reverse centerward move needs an approved exception")
+    elif not numeric(record.get("centerward_offset_px")):
+        errors.append(f"{path}.centerward_offset_px: must be numeric")
+
+    if exception:
+        require_filled(record, "exception_reason", path, errors)
+        require_filled(record, "exception_approved_at", path, errors)
+    for key in (
+        "single_line",
+        "overflow_absent",
+        "safe_area_clear",
+        "main_visual_clear",
+        "explanatory_typography_clear",
+    ):
+        require_true(record, key, path, errors)
+    return errors
+
+
 def validate_qa(data: dict[str, Any], verify_files: bool = False) -> list[str]:
     errors: list[str] = []
     project_root = project_root_from(data, "qa", errors, verify_files)
@@ -921,18 +1199,29 @@ def validate_qa(data: dict[str, Any], verify_files: bool = False) -> list[str]:
     if data.get("status") != "pass":
         errors.append("qa.status: must equal pass")
     checks = as_object(data.get("checks"), "qa.checks", errors)
-    for key in REQUIRED_QA_CHECKS:
+    required_qa_checks = REQUIRED_QA_CHECKS if schema_at_least(data, 1, 1) else tuple(
+        key for key in REQUIRED_QA_CHECKS if key not in QA_1_1_CHECKS
+    )
+    for key in required_qa_checks:
         if checks.get(key) is not True:
             errors.append(f"qa.checks.{key}: must be true")
     metrics = as_object(data.get("metrics"), "qa.metrics", errors)
     expected = as_object(data.get("expected_output"), "qa.expected_output", errors)
-    for key in (
+    zero_metrics = [
         "decode_error_count",
         "locked_fingerprint_mismatch_count",
         "desktop_hash_mismatch_count",
         "black_segment_count",
         "unexpected_silence_count",
-    ):
+    ]
+    if schema_at_least(data, 1, 1):
+        zero_metrics.extend((
+            "asset_scale_violation_count",
+            "caption_overflow_count",
+            "caption_safe_area_violation_count",
+            "caption_main_visual_overlap_count",
+        ))
+    for key in zero_metrics:
         if metrics.get(key) != 0:
             errors.append(f"qa.metrics.{key}: must equal 0")
     if not numeric(metrics.get("duration_seconds")) or metrics.get("duration_seconds", 0) <= 0:
@@ -966,13 +1255,272 @@ def validate_qa(data: dict[str, Any], verify_files: bool = False) -> list[str]:
         errors.append("qa: true_peak_dbtp and true_peak_dbtp_max must be numeric")
     elif true_peak > true_peak_max:
         errors.append("qa.metrics.true_peak_dbtp: exceeds approved maximum")
-    for key in ("minimum_information_label_font_px", "minimum_explanatory_font_px"):
+    minimum_font_keys = ["minimum_information_label_font_px", "minimum_explanatory_font_px"]
+    if schema_at_least(data, 1, 1):
+        minimum_font_keys.append("minimum_caption_font_px")
+    for key in minimum_font_keys:
         actual = metrics.get(key)
         minimum = expected.get(key)
         if not numeric(actual) or not numeric(minimum) or actual < minimum:
             errors.append(f"qa.metrics.{key}: must meet the approved mobile-readability minimum")
     if metrics.get("unreadable_corner_text_count") != 0:
         errors.append("qa.metrics.unreadable_corner_text_count: must equal 0")
+    if schema_at_least(data, 1, 1):
+        asset_audit = as_object(data.get("asset_class_scale_audit"), "qa.asset_class_scale_audit", errors)
+        for key in (
+            "flow_locked_unchanged",
+            "local_component_per_shot_records_complete",
+            "local_component_center_concentrated",
+            "full_illustration_inside_original_frame",
+            "scale_exception_records_complete",
+        ):
+            require_true(asset_audit, key, "qa.asset_class_scale_audit", errors)
+        require_exact_numeric_range(
+            asset_audit.get("local_component_target_scale_percent_range"),
+            (8, 12),
+            "qa.asset_class_scale_audit.local_component_target_scale_percent_range",
+            errors,
+        )
+        require_exact_numeric_range(
+            asset_audit.get("full_illustration_target_scale_percent_range"),
+            (4, 6),
+            "qa.asset_class_scale_audit.full_illustration_target_scale_percent_range",
+            errors,
+        )
+        for key in (
+            "flow_unauthorized_change_count",
+            "clipping_event_count",
+            "composition_break_count",
+        ):
+            if asset_audit.get(key) != 0:
+                errors.append(f"qa.asset_class_scale_audit.{key}: must equal 0")
+        for key in (
+            "flow_expected_count",
+            "flow_compared_count",
+            "local_component_expected_shots",
+            "local_component_shots_reviewed",
+            "full_illustration_expected_shots",
+            "full_illustration_shots_reviewed",
+            "scale_exception_count",
+        ):
+            value = asset_audit.get(key)
+            if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                errors.append(f"qa.asset_class_scale_audit.{key}: must be a non-negative integer")
+        for expected_key, actual_key in (
+            ("flow_expected_count", "flow_compared_count"),
+            ("local_component_expected_shots", "local_component_shots_reviewed"),
+            ("full_illustration_expected_shots", "full_illustration_shots_reviewed"),
+        ):
+            if asset_audit.get(expected_key) != asset_audit.get(actual_key):
+                errors.append(f"qa.asset_class_scale_audit.{actual_key}: must equal {expected_key}")
+        asset_manifest = load_verified_evidence_manifest(
+            project_root,
+            asset_audit.get("asset_record_manifest_path"),
+            asset_audit.get("asset_record_manifest_sha256"),
+            "qa.asset_class_scale_audit.asset_record_manifest",
+            errors,
+            verify_files,
+        )
+        if asset_manifest is not None:
+            asset_records = as_list(asset_manifest.get("records"), "qa.asset_record_manifest.records", errors)
+            expected_asset_records = sum(
+                value if isinstance(value, int) and not isinstance(value, bool) else 0
+                for key in ("flow_expected_count", "local_component_expected_shots", "full_illustration_expected_shots")
+                for value in (asset_audit.get(key),)
+            )
+            if len(asset_records) != expected_asset_records:
+                errors.append("qa.asset_record_manifest.records: count must equal all expected visual assets")
+            seen_asset_shots: set[str] = set()
+            for index, raw_record in enumerate(asset_records):
+                path = f"qa.asset_record_manifest.records[{index}]"
+                record = as_object(raw_record, path, errors)
+                shot_id = require_filled(record, "shot_id", path, errors)
+                family = require_filled(record, "family", path, errors)
+                if isinstance(shot_id, str):
+                    if shot_id in seen_asset_shots:
+                        errors.append(f"{path}.shot_id: duplicate {shot_id}")
+                    seen_asset_shots.add(shot_id)
+                if family not in ALLOWED_FAMILIES:
+                    errors.append(f"{path}.family: unsupported family {family!r}")
+                scale_change = record.get("scale_change_percent")
+                exception = record.get("exception_approved") is True
+                if not numeric(scale_change):
+                    errors.append(f"{path}.scale_change_percent: must be numeric")
+                elif family == "silent_google_flow" and scale_change != 0:
+                    errors.append(f"{path}.scale_change_percent: Flow must remain 0")
+                elif family == "independent_component_animation" and not (8 <= scale_change <= 12) and not exception:
+                    errors.append(f"{path}: local-component scale outside 8-12 needs an approved exception")
+                elif family == "full_editorial_illustration" and not (4 <= scale_change <= 6) and not exception:
+                    errors.append(f"{path}: full-illustration scale outside 4-6 needs an approved exception")
+                if exception:
+                    require_filled(record, "exception_reason", path, errors)
+                    require_filled(record, "exception_approved_at", path, errors)
+
+        caption_audit = as_object(
+            data.get("caption_visual_hierarchy_audit"),
+            "qa.caption_visual_hierarchy_audit",
+            errors,
+        )
+        if caption_audit.get("minimum_rendered_font_px") != metrics.get("minimum_caption_font_px"):
+            errors.append(
+                "qa.caption_visual_hierarchy_audit.minimum_rendered_font_px: "
+                "must match qa.metrics.minimum_caption_font_px"
+            )
+        for key in (
+            "per_caption_baseline_records_complete",
+            "single_line_default",
+            "centerward_move_applied",
+            "exception_records_complete",
+            "style_matches_editorial_animation",
+            "main_visual_protection_records_complete",
+        ):
+            require_true(caption_audit, key, "qa.caption_visual_hierarchy_audit", errors)
+        baseline_font = caption_audit.get("baseline_min_rendered_font_px")
+        final_font = caption_audit.get("minimum_rendered_font_px")
+        font_increase = caption_audit.get("minimum_font_increase_px_observed")
+        if not all(numeric(value) for value in (baseline_font, final_font, font_increase)):
+            errors.append("qa.caption_visual_hierarchy_audit: baseline/final font sizes and increase must be numeric")
+        elif final_font - baseline_font != font_increase:
+            errors.append(
+                "qa.caption_visual_hierarchy_audit.minimum_font_increase_px_observed: "
+                "must equal final minus baseline"
+            )
+        elif font_increase <= 0:
+            if caption_audit.get("font_size_increase_exception_approved") is not True:
+                errors.append(
+                    "qa.caption_visual_hierarchy_audit.font_size_increase_exception_approved: "
+                    "must be true when the final minimum font did not increase"
+                )
+            require_filled(
+                caption_audit,
+                "font_size_increase_exception_reason",
+                "qa.caption_visual_hierarchy_audit",
+                errors,
+            )
+        offsets = caption_audit.get("centerward_offset_range_px")
+        if not isinstance(offsets, list) or len(offsets) != 2 or not all(numeric(item) for item in offsets):
+            errors.append("qa.caption_visual_hierarchy_audit.centerward_offset_range_px: must be numeric [min, max]")
+        elif offsets[1] <= 0:
+            errors.append("qa.caption_visual_hierarchy_audit.centerward_offset_range_px: must include a centerward move")
+        require_filled(caption_audit, "contrast_strategy", "qa.caption_visual_hierarchy_audit", errors)
+        measured_contrast = caption_audit.get("contrast_ratio_measured")
+        observed_contrast = caption_audit.get("minimum_contrast_ratio_observed")
+        dual_edge = caption_audit.get("dual_edge_or_backing_strategy") is True
+        samples = caption_audit.get("complex_background_samples_reviewed")
+        if measured_contrast is True:
+            if not numeric(observed_contrast) or observed_contrast < 4.5:
+                errors.append(
+                    "qa.caption_visual_hierarchy_audit.minimum_contrast_ratio_observed: "
+                    "must be at least 4.5 when measured"
+                )
+        elif measured_contrast is False:
+            if observed_contrast is not None:
+                errors.append(
+                    "qa.caption_visual_hierarchy_audit.minimum_contrast_ratio_observed: "
+                    "must be null when contrast is not reliably measured"
+                )
+            if not dual_edge:
+                errors.append(
+                    "qa.caption_visual_hierarchy_audit.dual_edge_or_backing_strategy: "
+                    "must be true when contrast is not measured"
+                )
+        else:
+            errors.append("qa.caption_visual_hierarchy_audit.contrast_ratio_measured: must be boolean")
+        if not isinstance(samples, int) or isinstance(samples, bool) or samples <= 0:
+            errors.append("qa.caption_visual_hierarchy_audit.complex_background_samples_reviewed: must be positive")
+        protected_regions = caption_audit.get("protected_regions_reviewed")
+        if not isinstance(protected_regions, int) or isinstance(protected_regions, bool) or protected_regions <= 0:
+            errors.append("qa.caption_visual_hierarchy_audit.protected_regions_reviewed: must be positive")
+        for key in ("zero_or_reverse_move_exception_count",):
+            value = caption_audit.get(key)
+            if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                errors.append(f"qa.caption_visual_hierarchy_audit.{key}: must be a non-negative integer")
+        for expected_key, actual_key in (
+            ("caption_expected_count", "caption_reviewed_count"),
+            ("protected_shots_expected", "protected_shots_reviewed"),
+            ("protected_regions_expected", "protected_regions_reviewed"),
+        ):
+            expected_value = caption_audit.get(expected_key)
+            actual_value = caption_audit.get(actual_key)
+            if not isinstance(expected_value, int) or isinstance(expected_value, bool) or expected_value < 0:
+                errors.append(f"qa.caption_visual_hierarchy_audit.{expected_key}: must be non-negative")
+            if not isinstance(actual_value, int) or isinstance(actual_value, bool) or actual_value < 0:
+                errors.append(f"qa.caption_visual_hierarchy_audit.{actual_key}: must be non-negative")
+            if expected_value != actual_value:
+                errors.append(f"qa.caption_visual_hierarchy_audit.{actual_key}: must equal {expected_key}")
+
+        caption_manifest = load_verified_evidence_manifest(
+            project_root,
+            caption_audit.get("caption_audit_manifest_path"),
+            caption_audit.get("caption_audit_manifest_sha256"),
+            "qa.caption_visual_hierarchy_audit.caption_audit_manifest",
+            errors,
+            verify_files,
+        )
+        if caption_manifest is not None:
+            caption_records = as_list(caption_manifest.get("records"), "qa.caption_audit_manifest.records", errors)
+            if len(caption_records) != caption_audit.get("caption_expected_count"):
+                errors.append("qa.caption_audit_manifest.records: count must equal caption_expected_count")
+            seen_cues: set[str] = set()
+            for index, raw_record in enumerate(caption_records):
+                path = f"qa.caption_audit_manifest.records[{index}]"
+                record = as_object(raw_record, path, errors)
+                cue_id = record.get("cue_id")
+                if isinstance(cue_id, str):
+                    if cue_id in seen_cues:
+                        errors.append(f"{path}.cue_id: duplicate {cue_id}")
+                    seen_cues.add(cue_id)
+                errors.extend(
+                    validate_caption_audit_record(
+                        record,
+                        path,
+                        expected.get("width"),
+                        expected.get("height"),
+                    )
+                )
+
+        protection_manifest = load_verified_evidence_manifest(
+            project_root,
+            caption_audit.get("main_visual_protection_manifest_path"),
+            caption_audit.get("main_visual_protection_manifest_sha256"),
+            "qa.caption_visual_hierarchy_audit.main_visual_protection_manifest",
+            errors,
+            verify_files,
+        )
+        if protection_manifest is not None:
+            protection_records = as_list(
+                protection_manifest.get("records"),
+                "qa.main_visual_protection_manifest.records",
+                errors,
+            )
+            if len(protection_records) != caption_audit.get("protected_shots_expected"):
+                errors.append("qa.main_visual_protection_manifest.records: count must equal protected_shots_expected")
+            seen_protected_shots: set[str] = set()
+            total_regions = 0
+            for index, raw_record in enumerate(protection_records):
+                path = f"qa.main_visual_protection_manifest.records[{index}]"
+                record = as_object(raw_record, path, errors)
+                shot_id = require_filled(record, "shot_id", path, errors)
+                if isinstance(shot_id, str):
+                    if shot_id in seen_protected_shots:
+                        errors.append(f"{path}.shot_id: duplicate {shot_id}")
+                    seen_protected_shots.add(shot_id)
+                regions = as_list(record.get("protected_regions"), f"{path}.protected_regions", errors)
+                if not regions:
+                    errors.append(f"{path}.protected_regions: at least one region is required")
+                total_regions += len(regions)
+                require_filled(record, "evidence_ref", path, errors)
+                require_true(record, "caption_clear", path, errors)
+            if total_regions != caption_audit.get("protected_regions_expected"):
+                errors.append("qa.main_visual_protection_manifest: region count must equal protected_regions_expected")
+        for key in (
+            "overflow_count",
+            "safe_area_violation_count",
+            "main_visual_overlap_count",
+            "explanatory_typography_overlap_count",
+        ):
+            if caption_audit.get(key) != 0:
+                errors.append(f"qa.caption_visual_hierarchy_audit.{key}: must equal 0")
     full_watch = as_object(data.get("full_watch"), "qa.full_watch", errors)
     require_filled(full_watch, "watched_by", "qa.full_watch", errors)
     require_filled(full_watch, "watched_at", "qa.full_watch", errors)
@@ -1154,6 +1702,7 @@ def self_test() -> int:
         },
     }
     revision = {
+        "schema_version": "1.1",
         "project_id": "self-test",
         "project_root": "C:/self-test",
         "revision": "v2",
@@ -1172,8 +1721,52 @@ def self_test() -> int:
             {"domain": "flow", "applicable": True, "locked": True, "change_allowed": False, "fingerprint_roles": ["flow_sources_manifest", "flow_placement_manifest"], "invariants": sorted(REQUIRED_FLOW_LOCK_INVARIANTS)},
             {"domain": "bgm", "applicable": True, "locked": True, "change_allowed": False, "fingerprint_roles": ["bgm_master"], "invariants": ["source", "mix"]},
             {"domain": "components", "applicable": True, "locked": False, "change_allowed": True, "fingerprint_roles": [], "invariants": ["local_scale_only"]},
-            {"domain": "typography", "applicable": True, "locked": True, "change_allowed": False, "fingerprint_roles": ["typography_manifest"], "invariants": ["wording", "timing"]},
+            {"domain": "typography", "applicable": True, "locked": False, "change_allowed": True, "fingerprint_roles": [], "invariants": ["caption_render_only", "explanatory_typography_locked"]},
         ],
+        "visual_change_contract": {
+            "flow_policy": {
+                "locked_unchanged": True,
+                "expected_clip_count": 0,
+                "invariants": ["frame_size", "crop_window", "speed", "action_order", "absolute_timing"],
+            },
+            "local_component_scale_percent": {
+                "target_range": [8, 12],
+                "per_shot_records_required": True,
+                "below_range_requires_reason": True,
+                "outside_or_zero_requires_approved_reason": True,
+                "center_concentration_required": True,
+            },
+            "full_illustration_inner_scale_percent": {
+                "target_range": [4, 6],
+                "per_shot_records_required": True,
+                "outside_or_zero_requires_approved_reason": True,
+                "stay_inside_original_frame": True,
+                "critical_crop_allowed": False,
+            },
+            "caption_centerward_move": {
+                "required": True,
+                "baseline_manifest_required": True,
+                "font_size_change_required": True,
+                "minimum_font_increase_px": 1,
+                "font_size_change_exception_reason": "",
+                "per_caption_baseline_and_final_position_required": True,
+                "per_shot_avoidance_required": True,
+                "platform_safe_area_required": True,
+                "zero_or_reverse_move_requires_approved_reason": True,
+                "explanatory_typography_locked": True,
+            },
+            "caption_contrast_strategy": {
+                "foreground_style": "deep navy fill",
+                "edge_or_backing_style": "warm white stroke and paper shadow",
+                "keyword_style": "mustard and brick red",
+                "minimum_contrast_ratio_target": 4.5,
+                "style_matches_editorial_animation": True,
+            },
+            "main_visual_protection": {
+                "protected_roles": ["people", "core_actions", "result_states", "required_explanatory_typography"],
+                "overlap_allowed": False,
+            },
+        },
         "locked_fingerprints": [
             {"role": role, "path": f"{role}.bin", "sha256": sha}
             for role in (
@@ -1184,6 +1777,7 @@ def self_test() -> int:
                 "flow_placement_manifest",
                 "bgm_master",
                 "typography_manifest",
+                "explanatory_typography_manifest",
             )
         ],
         "required_regression_checks": [
@@ -1229,6 +1823,7 @@ def self_test() -> int:
     }
     qa_checks = {key: True for key in REQUIRED_QA_CHECKS}
     qa = {
+        "schema_version": "1.1",
         "project_id": "self-test",
         "project_root": "C:/self-test",
         "version": "v2",
@@ -1247,6 +1842,7 @@ def self_test() -> int:
             "true_peak_dbtp_max": -1,
             "minimum_information_label_font_px": 32,
             "minimum_explanatory_font_px": 46,
+            "minimum_caption_font_px": 49,
         },
         "checks": qa_checks,
         "metrics": {
@@ -1265,7 +1861,67 @@ def self_test() -> int:
             "desktop_hash_mismatch_count": 0,
             "minimum_information_label_font_px": 32,
             "minimum_explanatory_font_px": 46,
+            "minimum_caption_font_px": 49,
             "unreadable_corner_text_count": 0,
+            "asset_scale_violation_count": 0,
+            "caption_overflow_count": 0,
+            "caption_safe_area_violation_count": 0,
+            "caption_main_visual_overlap_count": 0,
+        },
+        "asset_class_scale_audit": {
+            "flow_locked_unchanged": True,
+            "flow_expected_count": 0,
+            "flow_compared_count": 0,
+            "flow_unauthorized_change_count": 0,
+            "local_component_target_scale_percent_range": [8, 12],
+            "local_component_expected_shots": 1,
+            "local_component_shots_reviewed": 1,
+            "local_component_per_shot_records_complete": True,
+            "local_component_center_concentrated": True,
+            "full_illustration_target_scale_percent_range": [4, 6],
+            "full_illustration_expected_shots": 0,
+            "full_illustration_shots_reviewed": 0,
+            "full_illustration_inside_original_frame": True,
+            "clipping_event_count": 0,
+            "composition_break_count": 0,
+            "scale_exception_count": 0,
+            "scale_exception_records_complete": True,
+            "asset_record_manifest_path": "asset-records.json",
+            "asset_record_manifest_sha256": sha,
+        },
+        "caption_visual_hierarchy_audit": {
+            "baseline_min_rendered_font_px": 48,
+            "minimum_rendered_font_px": 49,
+            "minimum_font_increase_px_observed": 1,
+            "font_size_increase_exception_approved": False,
+            "font_size_increase_exception_reason": "",
+            "per_caption_baseline_records_complete": True,
+            "single_line_default": True,
+            "centerward_move_applied": True,
+            "centerward_offset_range_px": [40, 70],
+            "zero_or_reverse_move_exception_count": 0,
+            "exception_records_complete": True,
+            "contrast_strategy": "deep navy with warm white stroke and paper shadow",
+            "contrast_ratio_measured": True,
+            "minimum_contrast_ratio_observed": 4.8,
+            "dual_edge_or_backing_strategy": True,
+            "style_matches_editorial_animation": True,
+            "complex_background_samples_reviewed": 8,
+            "main_visual_protection_records_complete": True,
+            "caption_expected_count": 1,
+            "caption_reviewed_count": 1,
+            "protected_shots_expected": 1,
+            "protected_shots_reviewed": 1,
+            "protected_regions_expected": 4,
+            "protected_regions_reviewed": 4,
+            "caption_audit_manifest_path": "caption-audit.json",
+            "caption_audit_manifest_sha256": sha,
+            "main_visual_protection_manifest_path": "protection-audit.json",
+            "main_visual_protection_manifest_sha256": sha,
+            "overflow_count": 0,
+            "safe_area_violation_count": 0,
+            "main_visual_overlap_count": 0,
+            "explanatory_typography_overlap_count": 0,
         },
         "full_watch": {
             "watched_by": "tester",
@@ -1281,16 +1937,59 @@ def self_test() -> int:
             "hash_mismatch_count": 0,
         },
     }
+    caption_record = {
+        "cue_id": "C001",
+        "shot_id": "S01",
+        "baseline_font_px": 48,
+        "final_font_px": 49,
+        "required_increase_px": 1,
+        "baseline_x_px": 540,
+        "baseline_y_px": 1500,
+        "final_x_px": 540,
+        "final_y_px": 1430,
+        "centerward_offset_px": 70,
+        "exception_approved": False,
+        "single_line": True,
+        "overflow_absent": True,
+        "safe_area_clear": True,
+        "main_visual_clear": True,
+        "explanatory_typography_clear": True,
+    }
     failures = (
         validate_project(project)
         + validate_shot_contract(project["shots"][0])
         + validate_gate2_manifest(gate2)
         + validate_revision(revision)
         + validate_qa(qa)
+        + cross_validate_contracts(
+            {"project": project, "revision": revision, "qa": qa},
+            verify_files=False,
+        )
+        + validate_caption_audit_record(caption_record, "self_test.caption_record", 1080, 1920)
     )
     if failures:
         for failure in failures:
             print(f"SELF-TEST FAIL: {failure}", file=sys.stderr)
+        return 1
+    legacy_qa = json.loads(json.dumps(qa))
+    legacy_qa["schema_version"] = "1.0"
+    for key in QA_1_1_CHECKS:
+        legacy_qa["checks"].pop(key, None)
+    for key in (
+        "asset_scale_violation_count",
+        "caption_overflow_count",
+        "caption_safe_area_violation_count",
+        "caption_main_visual_overlap_count",
+        "minimum_caption_font_px",
+    ):
+        legacy_qa["metrics"].pop(key, None)
+    legacy_qa["expected_output"].pop("minimum_caption_font_px", None)
+    legacy_qa.pop("asset_class_scale_audit", None)
+    legacy_qa.pop("caption_visual_hierarchy_audit", None)
+    legacy_failures = validate_qa(legacy_qa)
+    if legacy_failures:
+        for failure in legacy_failures:
+            print(f"SELF-TEST FAIL: v1.0 QA compatibility regression: {failure}", file=sys.stderr)
         return 1
     invalid = json.loads(json.dumps(project))
     invalid["gates"]["gate_2"] = "waiting_user_review"
@@ -1351,6 +2050,20 @@ def self_test() -> int:
     if not validate_revision(invalid_revision):
         print("SELF-TEST FAIL: validator did not reject an incomplete Flow lock", file=sys.stderr)
         return 1
+    invalid_revision = json.loads(json.dumps(revision))
+    del invalid_revision["visual_change_contract"]
+    if not validate_revision(invalid_revision):
+        print("SELF-TEST FAIL: validator did not require a visual change contract", file=sys.stderr)
+        return 1
+    invalid_revision = json.loads(json.dumps(revision))
+    invalid_revision["locked_fingerprints"] = [
+        item
+        for item in invalid_revision["locked_fingerprints"]
+        if item["role"] != "explanatory_typography_manifest"
+    ]
+    if not validate_revision(invalid_revision):
+        print("SELF-TEST FAIL: validator did not require an explanatory-typography fingerprint", file=sys.stderr)
+        return 1
     invalid_gate2 = json.loads(json.dumps(gate2))
     invalid_gate2["shot_entries"] = []
     if not validate_gate2_manifest(invalid_gate2):
@@ -1366,6 +2079,60 @@ def self_test() -> int:
     invalid_qa["metrics"]["black_segment_count"] = 1
     if not validate_qa(invalid_qa):
         print("SELF-TEST FAIL: validator did not reject bad output specs/black frames", file=sys.stderr)
+        return 1
+    invalid_qa = json.loads(json.dumps(qa))
+    invalid_qa["caption_visual_hierarchy_audit"]["main_visual_overlap_count"] = 1
+    if not validate_qa(invalid_qa):
+        print("SELF-TEST FAIL: validator did not reject caption overlap with the main visual", file=sys.stderr)
+        return 1
+    invalid_qa = json.loads(json.dumps(qa))
+    invalid_qa["asset_class_scale_audit"]["local_component_target_scale_percent_range"] = [4, 6]
+    if not validate_qa(invalid_qa):
+        print("SELF-TEST FAIL: validator did not reject the wrong local-component scale contract", file=sys.stderr)
+        return 1
+    invalid_qa = json.loads(json.dumps(qa))
+    invalid_qa["asset_class_scale_audit"]["flow_compared_count"] = 1
+    if not validate_qa(invalid_qa):
+        print("SELF-TEST FAIL: validator did not require every Flow clip to be compared", file=sys.stderr)
+        return 1
+    invalid_qa = json.loads(json.dumps(qa))
+    invalid_qa["asset_class_scale_audit"]["local_component_expected_shots"] = 0
+    invalid_qa["asset_class_scale_audit"]["local_component_shots_reviewed"] = 0
+    if not cross_validate_contracts(
+        {"project": project, "revision": revision, "qa": invalid_qa},
+        verify_files=False,
+    ):
+        print("SELF-TEST FAIL: cross-contract validation accepted a fake 0/0 family pass", file=sys.stderr)
+        return 1
+    invalid_qa = json.loads(json.dumps(qa))
+    invalid_qa["caption_visual_hierarchy_audit"]["minimum_rendered_font_px"] = 48
+    invalid_qa["caption_visual_hierarchy_audit"]["minimum_font_increase_px_observed"] = 0
+    invalid_qa["caption_visual_hierarchy_audit"]["font_size_increase_exception_approved"] = False
+    invalid_qa["metrics"]["minimum_caption_font_px"] = 48
+    if not validate_qa(invalid_qa):
+        print("SELF-TEST FAIL: validator did not reject a non-increased caption font without approval", file=sys.stderr)
+        return 1
+    invalid_qa = json.loads(json.dumps(qa))
+    invalid_qa["caption_visual_hierarchy_audit"]["minimum_contrast_ratio_observed"] = 4.4
+    if not validate_qa(invalid_qa):
+        print("SELF-TEST FAIL: validator did not reject measured caption contrast below 4.5", file=sys.stderr)
+        return 1
+    for missing_key in ("baseline_x_px", "final_y_px"):
+        invalid_caption_record = json.loads(json.dumps(caption_record))
+        del invalid_caption_record[missing_key]
+        if not validate_caption_audit_record(invalid_caption_record, "self_test.caption_record", 1080, 1920):
+            print(f"SELF-TEST FAIL: caption audit accepted missing {missing_key}", file=sys.stderr)
+            return 1
+    invalid_caption_record = json.loads(json.dumps(caption_record))
+    invalid_caption_record["baseline_x_px"] = "540"
+    if not validate_caption_audit_record(invalid_caption_record, "self_test.caption_record", 1080, 1920):
+        print("SELF-TEST FAIL: caption audit accepted a non-numeric baseline coordinate", file=sys.stderr)
+        return 1
+    invalid_caption_record = json.loads(json.dumps(caption_record))
+    invalid_caption_record["final_y_px"] = 1570
+    invalid_caption_record["centerward_offset_px"] = 70
+    if not validate_caption_audit_record(invalid_caption_record, "self_test.caption_record", 1080, 1920):
+        print("SELF-TEST FAIL: caption audit trusted a claimed positive move over reverse coordinates", file=sys.stderr)
         return 1
     invalid = json.loads(json.dumps(project))
     invalid["gates"]["gate_1"] = "approved"
@@ -1446,6 +2213,119 @@ def self_test() -> int:
     return 0
 
 
+def cross_validate_contracts(
+    loaded: dict[str, dict[str, Any]],
+    verify_files: bool,
+) -> list[str]:
+    errors: list[str] = []
+    qa = loaded.get("qa")
+    if qa is None or not schema_at_least(qa, 1, 1) or qa.get("status") != "pass":
+        return errors
+    project = loaded.get("project")
+    revision = loaded.get("revision")
+    if project is None:
+        errors.append("cross-contract: schema 1.1 passing QA requires the project contract")
+        return errors
+    if revision is None:
+        errors.append("cross-contract: schema 1.1 passing QA requires the revision lock")
+        return errors
+
+    project_shots = [shot for shot in project.get("shots", []) if isinstance(shot, dict)]
+    project_ids_by_family = {
+        family: {str(shot.get("shot_id")) for shot in project_shots if shot.get("shot_family") == family}
+        for family in ALLOWED_FAMILIES
+    }
+    asset_audit = qa.get("asset_class_scale_audit", {})
+    expected_by_family = {
+        "silent_google_flow": asset_audit.get("flow_expected_count"),
+        "independent_component_animation": asset_audit.get("local_component_expected_shots"),
+        "full_editorial_illustration": asset_audit.get("full_illustration_expected_shots"),
+    }
+    for family, expected in expected_by_family.items():
+        actual = len(project_ids_by_family[family])
+        if expected != actual:
+            errors.append(f"cross-contract: QA expected {family} count {expected!r}, project has {actual}")
+
+    revision_flow_expected = (
+        revision.get("visual_change_contract", {})
+        .get("flow_policy", {})
+        .get("expected_clip_count")
+    )
+    actual_flow_count = len(project_ids_by_family["silent_google_flow"])
+    if revision_flow_expected != actual_flow_count:
+        errors.append(
+            "cross-contract: revision Flow expected count must equal the project silent_google_flow count"
+        )
+    if asset_audit.get("flow_expected_count") != revision_flow_expected:
+        errors.append("cross-contract: QA and revision Flow expected counts must match")
+
+    caption_audit = qa.get("caption_visual_hierarchy_audit", {})
+    project_caption_count = project.get("captions", {}).get("count")
+    if caption_audit.get("caption_expected_count") != project_caption_count:
+        errors.append("cross-contract: QA caption_expected_count must equal project captions.count")
+
+    if not verify_files:
+        return errors
+    project_root = project_root_from(qa, "qa", errors, verify_files=True)
+    asset_manifest = load_verified_evidence_manifest(
+        project_root,
+        asset_audit.get("asset_record_manifest_path"),
+        asset_audit.get("asset_record_manifest_sha256"),
+        "cross-contract.asset_record_manifest",
+        errors,
+        True,
+    )
+    if asset_manifest is not None:
+        records_by_family = {family: set() for family in ALLOWED_FAMILIES}
+        for record in asset_manifest.get("records", []):
+            if isinstance(record, dict) and record.get("family") in records_by_family and is_filled(record.get("shot_id")):
+                records_by_family[record["family"]].add(str(record["shot_id"]))
+        for family in ALLOWED_FAMILIES:
+            if records_by_family[family] != project_ids_by_family[family]:
+                errors.append(f"cross-contract: asset manifest {family} shot set must equal project shot set")
+
+    caption_manifest = load_verified_evidence_manifest(
+        project_root,
+        caption_audit.get("caption_audit_manifest_path"),
+        caption_audit.get("caption_audit_manifest_sha256"),
+        "cross-contract.caption_audit_manifest",
+        errors,
+        True,
+    )
+    if caption_manifest is not None:
+        caption_records = [record for record in caption_manifest.get("records", []) if isinstance(record, dict)]
+        if len(caption_records) != project_caption_count:
+            errors.append("cross-contract: caption audit record count must equal project captions.count")
+        project_shot_ids = {str(shot.get("shot_id")) for shot in project_shots}
+        if any(str(record.get("shot_id")) not in project_shot_ids for record in caption_records):
+            errors.append("cross-contract: every caption audit record must map to a project shot")
+
+    protection_manifest = load_verified_evidence_manifest(
+        project_root,
+        caption_audit.get("main_visual_protection_manifest_path"),
+        caption_audit.get("main_visual_protection_manifest_sha256"),
+        "cross-contract.main_visual_protection_manifest",
+        errors,
+        True,
+    )
+    if protection_manifest is not None:
+        protected_ids = {
+            str(record.get("shot_id"))
+            for record in protection_manifest.get("records", [])
+            if isinstance(record, dict) and is_filled(record.get("shot_id"))
+        }
+        caption_shot_ids = {
+            str(record.get("shot_id"))
+            for record in (caption_manifest or {}).get("records", [])
+            if isinstance(record, dict) and is_filled(record.get("shot_id"))
+        }
+        if protected_ids != caption_shot_ids:
+            errors.append(
+                "cross-contract: protection manifest must cover every shot referenced by caption audit records"
+            )
+    return errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project-contract", type=Path)
@@ -1507,6 +2387,7 @@ def main() -> int:
             failures.append("cross-contract: project_id mismatch")
         if "revision" in loaded and "qa" in loaded and loaded["revision"].get("revision") != loaded["qa"].get("version"):
             failures.append("cross-contract: revision version must match QA version")
+        failures.extend(cross_validate_contracts(loaded, verify_files=verify_files))
     except ValueError as exc:
         failures.append(str(exc))
 

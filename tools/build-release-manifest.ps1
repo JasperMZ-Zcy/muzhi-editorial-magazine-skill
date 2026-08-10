@@ -18,7 +18,11 @@ if (-not (Test-Path -LiteralPath $versionPath -PathType Leaf)) {
 $version = (Get-Content -Raw -Encoding UTF8 -LiteralPath $versionPath).Trim()
 $files = @(
     Get-ChildItem -Recurse -File -LiteralPath $skillRoot |
-        Where-Object { $_.FullName -notmatch '[\\/]config[\\/]local\.json$' } |
+        Where-Object {
+            $_.FullName -notmatch '[\\/]config[\\/]local\.json$' -and
+            $_.FullName -notmatch '[\\/]__pycache__[\\/]' -and
+            $_.Extension -ne '.pyc'
+        } |
         Sort-Object FullName |
         ForEach-Object {
             $relative = $_.FullName.Substring($repoRoot.Length + 1).Replace('\', '/')

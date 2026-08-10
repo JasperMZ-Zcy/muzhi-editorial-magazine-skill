@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "project_id": "__FILL__",
   "project_root": "__FILL_ABSOLUTE_PROJECT_ROOT__",
   "revision": "v2",
@@ -24,6 +24,50 @@
     {"domain": "components", "applicable": true, "locked": false, "change_allowed": true, "fingerprint_roles": [], "invariants": ["only_approved_local_component_changes"]},
     {"domain": "typography", "applicable": true, "locked": true, "change_allowed": false, "fingerprint_roles": ["typography_manifest"], "invariants": ["wording", "timing", "forms"]}
   ],
+  "visual_change_contract": {
+    "flow_policy": {
+      "locked_unchanged": true,
+      "expected_clip_count": 0,
+      "invariants": ["frame_size", "crop_window", "speed", "action_order", "absolute_timing"]
+    },
+    "local_component_scale_percent": {
+      "target_range": [8, 12],
+      "per_shot_records_required": true,
+      "below_range_requires_reason": true,
+      "outside_or_zero_requires_approved_reason": true,
+      "center_concentration_required": true
+    },
+    "full_illustration_inner_scale_percent": {
+      "target_range": [4, 6],
+      "per_shot_records_required": true,
+      "outside_or_zero_requires_approved_reason": true,
+      "stay_inside_original_frame": true,
+      "critical_crop_allowed": false
+    },
+    "caption_centerward_move": {
+      "required": true,
+      "baseline_manifest_required": true,
+      "font_size_change_required": true,
+      "minimum_font_increase_px": 1,
+      "font_size_change_exception_reason": "",
+      "per_caption_baseline_and_final_position_required": true,
+      "per_shot_avoidance_required": true,
+      "platform_safe_area_required": true,
+      "zero_or_reverse_move_requires_approved_reason": true,
+      "explanatory_typography_locked": true
+    },
+    "caption_contrast_strategy": {
+      "foreground_style": "__FILL__",
+      "edge_or_backing_style": "__FILL__",
+      "keyword_style": "__FILL__",
+      "minimum_contrast_ratio_target": 4.5,
+      "style_matches_editorial_animation": true
+    },
+    "main_visual_protection": {
+      "protected_roles": ["people", "core_actions", "result_states", "required_explanatory_typography"],
+      "overlap_allowed": false
+    }
+  },
   "locked_fingerprints": [
     {"role": "narration_master", "path": "__FILL__", "sha256": "__FILL_64_HEX__"},
     {"role": "caption_source", "path": "__FILL__", "sha256": "__FILL_64_HEX__"},
@@ -32,7 +76,8 @@
     {"role": "flow_placement_manifest", "path": "__FILL__", "sha256": "__FILL_64_HEX__"},
     {"role": "bgm_master", "path": "__FILL__", "sha256": "__FILL_64_HEX__"},
     {"role": "mix_manifest", "path": "__FILL__", "sha256": "__FILL_64_HEX__"},
-    {"role": "typography_manifest", "path": "__FILL__", "sha256": "__FILL_64_HEX__"}
+    {"role": "typography_manifest", "path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    {"role": "explanatory_typography_manifest", "path": "__FILL__", "sha256": "__FILL_64_HEX__"}
   ],
   "required_regression_checks": [
     "locked_fingerprint_mismatch_count_is_zero",
