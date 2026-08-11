@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.2",
   "pipeline": "editorial-magazine-explainer",
   "project_id": "__FILL__",
   "project_root": "__FILL_ABSOLUTE_PROJECT_ROOT__",
@@ -107,6 +107,7 @@
   "final_composition_started": false,
   "shots": [
     {
+      "schema_version": "1.2",
       "shot_id": "S01",
       "start_seconds": 0,
       "end_seconds": 3,
@@ -166,9 +167,34 @@
           "kind": "speech_bubble",
           "communicative": true,
           "text": "__FILL_LOCAL_TYPE__",
+          "text_source": "local_compositor",
+          "parent_layer_id": "S01-L01",
+          "coordinate_space": "parent_local",
+          "text_region_normalized": {"x": 0.12, "y": 0.18, "width": 0.76, "height": 0.48},
+          "padding_percent": 6,
+          "perspective_mode": "matched_parent",
+          "clip_to_container": true,
+          "moves_with_parent": true,
+          "visual_hierarchy_role": "primary",
+          "minimum_font_px": 32,
           "decorative_reason": ""
         }
       ],
+      "adaptive_composition_fit": {
+        "required": true,
+        "fit_mode": "contain",
+        "approved_baseline_scale": 1.0,
+        "target_scale_change_percent_range": [8, 12],
+        "allowed_tuning_percent_range": [4, 15],
+        "hard_safe_bounds_px": {"left": 72, "top": 300, "right": 1008, "bottom": 1290},
+        "preferred_stage_bounds_px": {"left": 96, "top": 380, "right": 984, "bottom": 1280},
+        "preferred_primary_axis_fill_ratio_range": [0.72, 0.9],
+        "maximum_width_fill_ratio": 0.9,
+        "maximum_height_fill_ratio": 0.92,
+        "maximum_center_offset_x_px": 90,
+        "per_shot_tuning_required": true,
+        "dense_shot_exception_reason": ""
+      },
       "previous_primary_exit_defined": true,
       "caption_layout": {
         "approved_text": "__FILL__",
@@ -184,6 +210,8 @@
         "whole_image_motion_as_semantic_animation",
         "generated_readable_chinese",
         "empty_communicative_container",
+        "detached_overlay_text_for_semantic_container",
+        "uniform_global_scale_without_per_shot_fit",
         "production_markers_in_final_frame"
       ],
       "gate_2_status": "waiting_user_review"

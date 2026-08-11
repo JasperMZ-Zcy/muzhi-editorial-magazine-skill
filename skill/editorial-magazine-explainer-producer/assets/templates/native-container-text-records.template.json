@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.2",
+  "records": [
+    {
+      "container_id": "S01-C01",
+      "shot_id": "S01",
+      "parent_layer_id": "S01-L01",
+      "text_source": "local_compositor",
+      "coordinate_space": "parent_local",
+      "text_region_normalized": {"x": 0.12, "y": 0.18, "width": 0.76, "height": 0.48},
+      "padding_percent": 6,
+      "perspective_mode": "matched_parent",
+      "minimum_font_px": 32,
+      "clip_to_container": true,
+      "moves_with_parent": true,
+      "text_inside_container": true,
+      "overflow_absent": true,
+      "perspective_matched": true,
+      "floating_overlay_absent": true,
+      "readable": true,
+      "evidence_ref": "__FILL_KEYFRAME_OR_TEMPORAL_SWEEP_EVIDENCE__"
+    }
+  ]
+}

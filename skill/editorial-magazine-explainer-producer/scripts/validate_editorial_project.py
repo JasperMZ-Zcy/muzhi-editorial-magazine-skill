@@ -48,6 +48,8 @@ REQUIRED_QA_CHECKS = (
     "all_semantic_stages_reviewed",
     "all_flow_and_full_illustrations_reviewed",
     "asset_class_scale_and_center_audit",
+    "native_container_text_audit",
+    "adaptive_composition_fit_audit",
     "longest_captions_final_resolution",
     "caption_hierarchy_contrast_and_safe_placement",
     "caption_main_visual_non_occlusion",
@@ -63,6 +65,10 @@ QA_1_1_CHECKS = {
     "asset_class_scale_and_center_audit",
     "caption_hierarchy_contrast_and_safe_placement",
     "caption_main_visual_non_occlusion",
+}
+QA_1_2_CHECKS = {
+    "native_container_text_audit",
+    "adaptive_composition_fit_audit",
 }
 SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 PLACEHOLDER_RE = re.compile(r"^__FILL(?:_OR_[A-Z]+|_[A-Z0-9_]+)?__$")
@@ -82,6 +88,9 @@ REQUIRED_GATE2_WHOLE_FILM_ARTIFACTS = (
     "layer_exit_and_metaphor_audit",
     "flow_shot_list",
     "gate2_checklist",
+)
+GATE2_1_2_WHOLE_FILM_ARTIFACTS = (
+    "container_native_text_and_fit_plan_audit",
 )
 REQUIRED_LOCK_DOMAINS = {
     "audio",
@@ -175,6 +184,33 @@ def require_exact_numeric_range(
         errors.append(f"{path}: must equal [{expected[0]}, {expected[1]}] for this pipeline")
 
 
+def validate_normalized_rect(value: Any, path: str, errors: list[str]) -> None:
+    rect = as_object(value, path, errors)
+    coordinates = {key: rect.get(key) for key in ("x", "y", "width", "height")}
+    if not all(numeric(item) for item in coordinates.values()):
+        errors.append(f"{path}: x, y, width and height must be numeric")
+        return
+    if coordinates["x"] < 0 or coordinates["y"] < 0:
+        errors.append(f"{path}: x and y must be non-negative")
+    if coordinates["width"] <= 0 or coordinates["height"] <= 0:
+        errors.append(f"{path}: width and height must be greater than zero")
+    if coordinates["x"] + coordinates["width"] > 1.000001 or coordinates["y"] + coordinates["height"] > 1.000001:
+        errors.append(f"{path}: the text region must stay inside its parent container")
+
+
+def validate_pixel_bounds(value: Any, path: str, errors: list[str]) -> dict[str, Any]:
+    bounds = as_object(value, path, errors)
+    coordinates = {key: bounds.get(key) for key in ("left", "top", "right", "bottom")}
+    if not all(numeric(item) for item in coordinates.values()):
+        errors.append(f"{path}: left, top, right and bottom must be numeric")
+        return {}
+    if coordinates["left"] < 0 or coordinates["top"] < 0:
+        errors.append(f"{path}: left and top must be non-negative")
+    if coordinates["right"] <= coordinates["left"] or coordinates["bottom"] <= coordinates["top"]:
+        errors.append(f"{path}: right/bottom must exceed left/top")
+    return bounds
+
+
 def normalize_text(value: Any) -> str:
     if not isinstance(value, str):
         return ""
@@ -260,6 +296,7 @@ def validate_shot_contract(
     path: str = "shot",
     seen_shots: set[str] | None = None,
     master_duration: float | None = None,
+    require_native_fit: bool = False,
 ) -> list[str]:
     errors: list[str] = []
     shot_id = require_filled(shot, "shot_id", path, errors)
@@ -309,14 +346,20 @@ def validate_shot_contract(
             if cues[key] < start or cues[key] > end:
                 errors.append(f"{path}.cues.{key}: must stay inside the shot range")
 
+    contract_v1_2 = require_native_fit or schema_at_least(shot, 1, 2)
     layers = as_list(shot.get("layers"), f"{path}.layers", errors)
+    layer_ids: set[str] = set()
     if family == "independent_component_animation" and not layers:
         errors.append(f"{path}.layers: component animation needs independently addressable layers")
     has_generated_core_actor = False
     for layer_index, raw_layer in enumerate(layers):
         layer_path = f"{path}.layers[{layer_index}]"
         layer = as_object(raw_layer, layer_path, errors)
-        require_filled(layer, "layer_id", layer_path, errors)
+        layer_id = require_filled(layer, "layer_id", layer_path, errors)
+        if isinstance(layer_id, str):
+            if layer_id in layer_ids:
+                errors.append(f"{layer_path}.layer_id: duplicate {layer_id}")
+            layer_ids.add(layer_id)
         role = require_filled(layer, "role", layer_path, errors)
         source = require_filled(layer, "asset_source", layer_path, errors)
         if role in {"semantic_actor", "acted_on_object", "key_tool", "result_state"} and layer.get("core_semantic_actor") is not True:
@@ -392,8 +435,81 @@ def validate_shot_contract(
         require_filled(container, "kind", container_path, errors)
         if container.get("communicative") is True and not is_filled(container.get("text")):
             errors.append(f"{container_path}: communicative container must have local text")
+        if contract_v1_2 and container.get("communicative") is True:
+            if container.get("text_source") != "local_compositor":
+                errors.append(f"{container_path}.text_source: must equal local_compositor")
+            parent_layer_id = require_filled(container, "parent_layer_id", container_path, errors)
+            if isinstance(parent_layer_id, str) and parent_layer_id not in layer_ids:
+                errors.append(f"{container_path}.parent_layer_id: must reference a real layer in this shot")
+            if container.get("coordinate_space") != "parent_local":
+                errors.append(f"{container_path}.coordinate_space: must equal parent_local")
+            validate_normalized_rect(
+                container.get("text_region_normalized"),
+                f"{container_path}.text_region_normalized",
+                errors,
+            )
+            padding = container.get("padding_percent")
+            if not numeric(padding) or not 0 <= padding <= 20:
+                errors.append(f"{container_path}.padding_percent: must be between 0 and 20")
+            if container.get("perspective_mode") != "matched_parent":
+                errors.append(f"{container_path}.perspective_mode: must equal matched_parent")
+            require_true(container, "clip_to_container", container_path, errors)
+            require_true(container, "moves_with_parent", container_path, errors)
+            if container.get("visual_hierarchy_role") not in {"primary", "secondary", "metadata"}:
+                errors.append(f"{container_path}.visual_hierarchy_role: invalid")
+            minimum_font = container.get("minimum_font_px")
+            if not numeric(minimum_font) or minimum_font < 32:
+                errors.append(f"{container_path}.minimum_font_px: must be at least 32")
         if container.get("communicative") is not True and not is_filled(container.get("decorative_reason")):
             errors.append(f"{container_path}: non-communicative container needs a decorative_reason")
+
+    if contract_v1_2 and family == "independent_component_animation":
+        fit = as_object(shot.get("adaptive_composition_fit"), f"{path}.adaptive_composition_fit", errors)
+        require_true(fit, "required", f"{path}.adaptive_composition_fit", errors)
+        if fit.get("fit_mode") != "contain":
+            errors.append(f"{path}.adaptive_composition_fit.fit_mode: must equal contain")
+        baseline_scale = fit.get("approved_baseline_scale")
+        if not numeric(baseline_scale) or baseline_scale <= 0:
+            errors.append(f"{path}.adaptive_composition_fit.approved_baseline_scale: must be greater than zero")
+        require_exact_numeric_range(
+            fit.get("target_scale_change_percent_range"),
+            (8, 12),
+            f"{path}.adaptive_composition_fit.target_scale_change_percent_range",
+            errors,
+        )
+        require_exact_numeric_range(
+            fit.get("allowed_tuning_percent_range"),
+            (4, 15),
+            f"{path}.adaptive_composition_fit.allowed_tuning_percent_range",
+            errors,
+        )
+        hard_bounds = validate_pixel_bounds(
+            fit.get("hard_safe_bounds_px"),
+            f"{path}.adaptive_composition_fit.hard_safe_bounds_px",
+            errors,
+        )
+        preferred_bounds = validate_pixel_bounds(
+            fit.get("preferred_stage_bounds_px"),
+            f"{path}.adaptive_composition_fit.preferred_stage_bounds_px",
+            errors,
+        )
+        if hard_bounds and preferred_bounds and not (
+            hard_bounds["left"] <= preferred_bounds["left"]
+            and hard_bounds["top"] <= preferred_bounds["top"]
+            and hard_bounds["right"] >= preferred_bounds["right"]
+            and hard_bounds["bottom"] >= preferred_bounds["bottom"]
+        ):
+            errors.append(f"{path}.adaptive_composition_fit: preferred stage must stay inside hard safe bounds")
+        require_exact_numeric_range(
+            fit.get("preferred_primary_axis_fill_ratio_range"),
+            (0.72, 0.9),
+            f"{path}.adaptive_composition_fit.preferred_primary_axis_fill_ratio_range",
+            errors,
+        )
+        for key, expected in (("maximum_width_fill_ratio", 0.9), ("maximum_height_fill_ratio", 0.92), ("maximum_center_offset_x_px", 90)):
+            if fit.get(key) != expected:
+                errors.append(f"{path}.adaptive_composition_fit.{key}: must equal {expected}")
+        require_true(fit, "per_shot_tuning_required", f"{path}.adaptive_composition_fit", errors)
 
     require_true(shot, "previous_primary_exit_defined", path, errors)
     caption_layout = as_object(shot.get("caption_layout"), f"{path}.caption_layout", errors)
@@ -420,6 +536,11 @@ def validate_shot_contract(
         "empty_communicative_container",
         "production_markers_in_final_frame",
     }
+    if contract_v1_2:
+        required_prohibitions.update({
+            "detached_overlay_text_for_semantic_container",
+            "uniform_global_scale_without_per_shot_fit",
+        })
     if not required_prohibitions.issubset(prohibited):
         errors.append(f"{path}.prohibited_shortcuts: missing hard production prohibitions")
     if shot.get("gate_2_status") not in {"waiting_user_review", "approved", "rejected"}:
@@ -581,7 +702,15 @@ def validate_project(data: dict[str, Any], verify_files: bool = False) -> list[s
     for index, raw_shot in enumerate(shots):
         path = f"shots[{index}]"
         shot = as_object(raw_shot, path, errors)
-        errors.extend(validate_shot_contract(shot, path, seen_shots, float(duration) if numeric(duration) else None))
+        errors.extend(
+            validate_shot_contract(
+                shot,
+                path,
+                seen_shots,
+                float(duration) if numeric(duration) else None,
+                require_native_fit=schema_at_least(data, 1, 2),
+            )
+        )
     if gate_2 == "approved":
         for index, shot in enumerate(shots):
             if isinstance(shot, dict) and shot.get("gate_2_status") != "approved":
@@ -901,6 +1030,13 @@ def validate_revision(data: dict[str, Any], verify_files: bool = False) -> list[
                 "revision_lock.visual_change_contract.local_component_scale_percent.target_range",
                 errors,
             )
+            if schema_at_least(data, 1, 2):
+                require_exact_numeric_range(
+                    local_scale.get("allowed_tuning_range"),
+                    (4, 15),
+                    "revision_lock.visual_change_contract.local_component_scale_percent.allowed_tuning_range",
+                    errors,
+                )
             for key in (
                 "per_shot_records_required",
                 "below_range_requires_reason",
@@ -937,6 +1073,94 @@ def validate_revision(data: dict[str, Any], verify_files: bool = False) -> list[
                     "revision_lock.visual_change_contract.full_illustration_inner_scale_percent.critical_crop_allowed: "
                     "must be false"
                 )
+
+            if schema_at_least(data, 1, 2):
+                native_binding = as_object(
+                    visual.get("native_container_text_binding"),
+                    "revision_lock.visual_change_contract.native_container_text_binding",
+                    errors,
+                )
+                for key in (
+                    "required",
+                    "local_compositor_required",
+                    "parent_local_coordinates_required",
+                    "clip_to_container_required",
+                    "moves_with_parent_required",
+                    "perspective_match_required",
+                    "per_container_records_required",
+                ):
+                    require_true(
+                        native_binding,
+                        key,
+                        "revision_lock.visual_change_contract.native_container_text_binding",
+                        errors,
+                    )
+                if native_binding.get("floating_overlay_allowed") is not False:
+                    errors.append(
+                        "revision_lock.visual_change_contract.native_container_text_binding."
+                        "floating_overlay_allowed: must be false"
+                    )
+
+                adaptive_fit = as_object(
+                    visual.get("adaptive_composition_fit"),
+                    "revision_lock.visual_change_contract.adaptive_composition_fit",
+                    errors,
+                )
+                require_true(adaptive_fit, "required", "revision_lock.visual_change_contract.adaptive_composition_fit", errors)
+                if adaptive_fit.get("fit_mode") != "contain":
+                    errors.append(
+                        "revision_lock.visual_change_contract.adaptive_composition_fit.fit_mode: must equal contain"
+                    )
+                require_exact_numeric_range(
+                    adaptive_fit.get("target_scale_change_percent_range"),
+                    (8, 12),
+                    "revision_lock.visual_change_contract.adaptive_composition_fit.target_scale_change_percent_range",
+                    errors,
+                )
+                require_exact_numeric_range(
+                    adaptive_fit.get("allowed_tuning_percent_range"),
+                    (4, 15),
+                    "revision_lock.visual_change_contract.adaptive_composition_fit.allowed_tuning_percent_range",
+                    errors,
+                )
+                hard_bounds = validate_pixel_bounds(
+                    adaptive_fit.get("hard_safe_bounds_px"),
+                    "revision_lock.visual_change_contract.adaptive_composition_fit.hard_safe_bounds_px",
+                    errors,
+                )
+                preferred_bounds = validate_pixel_bounds(
+                    adaptive_fit.get("preferred_stage_bounds_px"),
+                    "revision_lock.visual_change_contract.adaptive_composition_fit.preferred_stage_bounds_px",
+                    errors,
+                )
+                if hard_bounds and preferred_bounds and not (
+                    hard_bounds["left"] <= preferred_bounds["left"]
+                    and hard_bounds["top"] <= preferred_bounds["top"]
+                    and hard_bounds["right"] >= preferred_bounds["right"]
+                    and hard_bounds["bottom"] >= preferred_bounds["bottom"]
+                ):
+                    errors.append(
+                        "revision_lock.visual_change_contract.adaptive_composition_fit: "
+                        "preferred stage must stay inside hard safe bounds"
+                    )
+                require_exact_numeric_range(
+                    adaptive_fit.get("preferred_primary_axis_fill_ratio_range"),
+                    (0.72, 0.9),
+                    "revision_lock.visual_change_contract.adaptive_composition_fit.preferred_primary_axis_fill_ratio_range",
+                    errors,
+                )
+                for key, expected in (("maximum_width_fill_ratio", 0.9), ("maximum_height_fill_ratio", 0.92), ("maximum_center_offset_x_px", 90)):
+                    if adaptive_fit.get(key) != expected:
+                        errors.append(
+                            f"revision_lock.visual_change_contract.adaptive_composition_fit.{key}: must equal {expected}"
+                        )
+                for key in ("per_shot_tuning_required", "safe_region_and_main_visual_protection_required"):
+                    require_true(
+                        adaptive_fit,
+                        key,
+                        "revision_lock.visual_change_contract.adaptive_composition_fit",
+                        errors,
+                    )
 
         if "typography" in change_allowed_domains:
             caption_move = as_object(
@@ -1087,6 +1311,9 @@ def validate_gate2_manifest(data: dict[str, Any], verify_files: bool = False) ->
                 errors,
                 verify_files,
             )
+            if schema_at_least(data, 1, 2):
+                require_true(entry, "container_native_text_plan_present", path, errors)
+                require_true(entry, "adaptive_composition_fit_plan_present", path, errors)
         if verify_files and project_root is not None and is_filled(entry.get("contract_path")):
             contract_path = Path(str(entry["contract_path"]))
             if not contract_path.is_absolute():
@@ -1094,7 +1321,11 @@ def validate_gate2_manifest(data: dict[str, Any], verify_files: bool = False) ->
             if contract_path.is_file():
                 try:
                     contract = load_json(contract_path)
-                    contract_errors = validate_shot_contract(contract, f"{path}.contract")
+                    contract_errors = validate_shot_contract(
+                        contract,
+                        f"{path}.contract",
+                        require_native_fit=schema_at_least(data, 1, 2),
+                    )
                     errors.extend(contract_errors)
                     if contract.get("shot_id") != shot_id:
                         errors.append(f"{path}.contract: shot_id does not match manifest")
@@ -1105,7 +1336,10 @@ def validate_gate2_manifest(data: dict[str, Any], verify_files: bool = False) ->
     if sorted(entry_ids) != sorted(normalized_ids):
         errors.append("gate2_manifest.shot_entries: must cover every all_shot_ids entry exactly once")
     artifacts = as_object(data.get("whole_film_artifacts"), "gate2_manifest.whole_film_artifacts", errors)
-    for key in REQUIRED_GATE2_WHOLE_FILM_ARTIFACTS:
+    required_gate2_artifacts = REQUIRED_GATE2_WHOLE_FILM_ARTIFACTS
+    if schema_at_least(data, 1, 2):
+        required_gate2_artifacts += GATE2_1_2_WHOLE_FILM_ARTIFACTS
+    for key in required_gate2_artifacts:
         item = as_object(artifacts.get(key), f"gate2_manifest.whole_film_artifacts.{key}", errors)
         verify_path_hash(
             project_root,
@@ -1187,6 +1421,118 @@ def validate_caption_audit_record(
     return errors
 
 
+def validate_native_container_text_record(record: dict[str, Any], path: str) -> list[str]:
+    errors: list[str] = []
+    for key in ("container_id", "shot_id", "parent_layer_id"):
+        require_filled(record, key, path, errors)
+    if record.get("text_source") != "local_compositor":
+        errors.append(f"{path}.text_source: must equal local_compositor")
+    if record.get("coordinate_space") != "parent_local":
+        errors.append(f"{path}.coordinate_space: must equal parent_local")
+    validate_normalized_rect(record.get("text_region_normalized"), f"{path}.text_region_normalized", errors)
+    padding = record.get("padding_percent")
+    if not numeric(padding) or not 0 <= padding <= 20:
+        errors.append(f"{path}.padding_percent: must be between 0 and 20")
+    if record.get("perspective_mode") != "matched_parent":
+        errors.append(f"{path}.perspective_mode: must equal matched_parent")
+    minimum_font = record.get("minimum_font_px")
+    if not numeric(minimum_font) or minimum_font < 32:
+        errors.append(f"{path}.minimum_font_px: must be at least 32")
+    for key in (
+        "clip_to_container",
+        "moves_with_parent",
+        "text_inside_container",
+        "overflow_absent",
+        "perspective_matched",
+        "floating_overlay_absent",
+        "readable",
+    ):
+        require_true(record, key, path, errors)
+    require_filled(record, "evidence_ref", path, errors)
+    return errors
+
+
+def validate_adaptive_fit_record(
+    record: dict[str, Any],
+    path: str,
+    frame_width: Any,
+    frame_height: Any,
+    hard_safe_bounds: dict[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    require_filled(record, "shot_id", path, errors)
+    baseline = record.get("baseline_scale")
+    final = record.get("final_scale")
+    change = record.get("scale_change_percent")
+    exception = record.get("exception_approved") is True
+    if not all(numeric(value) for value in (baseline, final, change)) or baseline <= 0 or final <= 0:
+        errors.append(f"{path}: baseline_scale, final_scale and scale_change_percent must be positive/numeric")
+    else:
+        calculated = (final / baseline - 1) * 100
+        if abs(calculated - change) > 0.1:
+            errors.append(f"{path}.scale_change_percent: must match baseline_scale and final_scale")
+        if not 4 <= change <= 15 and not exception:
+            errors.append(f"{path}: scale outside the 4-15 tuning range needs explicit approval")
+        elif not 8 <= change <= 12 and not exception:
+            errors.append(f"{path}: scale outside the 8-12 target range needs an approved per-shot reason")
+
+    bbox = as_object(record.get("final_bbox_px"), f"{path}.final_bbox_px", errors)
+    bbox_values = {key: bbox.get(key) for key in ("x", "y", "width", "height")}
+    if not all(numeric(value) for value in bbox_values.values()):
+        errors.append(f"{path}.final_bbox_px: x, y, width and height must be numeric")
+    elif bbox_values["width"] <= 0 or bbox_values["height"] <= 0:
+        errors.append(f"{path}.final_bbox_px: width and height must be greater than zero")
+    else:
+        right = bbox_values["x"] + bbox_values["width"]
+        bottom = bbox_values["y"] + bbox_values["height"]
+        if numeric(frame_width) and numeric(frame_height):
+            if bbox_values["x"] < 0 or bbox_values["y"] < 0 or right > frame_width or bottom > frame_height:
+                errors.append(f"{path}.final_bbox_px: must stay inside the encoded frame")
+            reported_width_fill = record.get("width_fill_ratio")
+            reported_height_fill = record.get("height_fill_ratio")
+            calculated_width_fill = bbox_values["width"] / frame_width
+            calculated_height_fill = bbox_values["height"] / frame_height
+            if not numeric(reported_width_fill) or abs(reported_width_fill - calculated_width_fill) > 0.005:
+                errors.append(f"{path}.width_fill_ratio: must match final_bbox_px/frame width")
+            elif reported_width_fill > 0.9:
+                errors.append(f"{path}.width_fill_ratio: must not exceed 0.9")
+            if not numeric(reported_height_fill) or abs(reported_height_fill - calculated_height_fill) > 0.005:
+                errors.append(f"{path}.height_fill_ratio: must match final_bbox_px/frame height")
+            elif reported_height_fill > 0.92:
+                errors.append(f"{path}.height_fill_ratio: must not exceed 0.92")
+        if hard_safe_bounds and all(numeric(hard_safe_bounds.get(key)) for key in ("left", "top", "right", "bottom")):
+            if (
+                bbox_values["x"] < hard_safe_bounds["left"]
+                or bbox_values["y"] < hard_safe_bounds["top"]
+                or right > hard_safe_bounds["right"]
+                or bottom > hard_safe_bounds["bottom"]
+            ):
+                errors.append(f"{path}.final_bbox_px: must stay inside the hard safe bounds")
+
+    primary_fill = record.get("primary_axis_fill_ratio")
+    if not numeric(primary_fill):
+        errors.append(f"{path}.primary_axis_fill_ratio: must be numeric")
+    elif not 0.72 <= primary_fill <= 0.9 and not exception:
+        errors.append(f"{path}.primary_axis_fill_ratio: outside 0.72-0.9 needs explicit approval")
+    center_offset = record.get("center_offset_x_px")
+    if not numeric(center_offset):
+        errors.append(f"{path}.center_offset_x_px: must be numeric")
+    elif abs(center_offset) > 90 and not exception:
+        errors.append(f"{path}.center_offset_x_px: over 90px needs explicit approval")
+    for key in (
+        "critical_crop_absent",
+        "visual_drift_absent",
+        "main_visual_clear",
+        "comfortable_density",
+    ):
+        require_true(record, key, path, errors)
+    if exception:
+        require_filled(record, "exception_reason", path, errors)
+        require_filled(record, "exception_approved_at", path, errors)
+    require_filled(record, "evidence_ref", path, errors)
+    return errors
+
+
 def validate_qa(data: dict[str, Any], verify_files: bool = False) -> list[str]:
     errors: list[str] = []
     project_root = project_root_from(data, "qa", errors, verify_files)
@@ -1199,9 +1545,14 @@ def validate_qa(data: dict[str, Any], verify_files: bool = False) -> list[str]:
     if data.get("status") != "pass":
         errors.append("qa.status: must equal pass")
     checks = as_object(data.get("checks"), "qa.checks", errors)
-    required_qa_checks = REQUIRED_QA_CHECKS if schema_at_least(data, 1, 1) else tuple(
-        key for key in REQUIRED_QA_CHECKS if key not in QA_1_1_CHECKS
-    )
+    if schema_at_least(data, 1, 2):
+        required_qa_checks = REQUIRED_QA_CHECKS
+    elif schema_at_least(data, 1, 1):
+        required_qa_checks = tuple(key for key in REQUIRED_QA_CHECKS if key not in QA_1_2_CHECKS)
+    else:
+        required_qa_checks = tuple(
+            key for key in REQUIRED_QA_CHECKS if key not in QA_1_1_CHECKS | QA_1_2_CHECKS
+        )
     for key in required_qa_checks:
         if checks.get(key) is not True:
             errors.append(f"qa.checks.{key}: must be true")
@@ -1220,6 +1571,11 @@ def validate_qa(data: dict[str, Any], verify_files: bool = False) -> list[str]:
             "caption_overflow_count",
             "caption_safe_area_violation_count",
             "caption_main_visual_overlap_count",
+        ))
+    if schema_at_least(data, 1, 2):
+        zero_metrics.extend((
+            "native_container_text_violation_count",
+            "adaptive_composition_fit_violation_count",
         ))
     for key in zero_metrics:
         if metrics.get(key) != 0:
@@ -1355,6 +1711,171 @@ def validate_qa(data: dict[str, Any], verify_files: bool = False) -> list[str]:
                 if exception:
                     require_filled(record, "exception_reason", path, errors)
                     require_filled(record, "exception_approved_at", path, errors)
+
+        if schema_at_least(data, 1, 2):
+            native_audit = as_object(
+                data.get("native_container_text_audit"),
+                "qa.native_container_text_audit",
+                errors,
+            )
+            for key in (
+                "per_container_records_complete",
+                "local_compositor_used",
+                "parent_local_coordinates_used",
+            ):
+                require_true(native_audit, key, "qa.native_container_text_audit", errors)
+            for expected_key, reviewed_key in ((
+                "communicative_container_expected_count",
+                "communicative_container_reviewed_count",
+            ),):
+                expected_count = native_audit.get(expected_key)
+                reviewed_count = native_audit.get(reviewed_key)
+                if not isinstance(expected_count, int) or isinstance(expected_count, bool) or expected_count < 0:
+                    errors.append(f"qa.native_container_text_audit.{expected_key}: must be non-negative")
+                if not isinstance(reviewed_count, int) or isinstance(reviewed_count, bool) or reviewed_count < 0:
+                    errors.append(f"qa.native_container_text_audit.{reviewed_key}: must be non-negative")
+                if expected_count != reviewed_count:
+                    errors.append(f"qa.native_container_text_audit.{reviewed_key}: must equal {expected_key}")
+            for key in (
+                "parent_binding_failure_count",
+                "outside_container_count",
+                "clipping_mask_failure_count",
+                "perspective_mismatch_count",
+                "text_overflow_count",
+                "floating_overlay_count",
+                "parent_motion_desync_count",
+                "unreadable_count",
+            ):
+                if native_audit.get(key) != 0:
+                    errors.append(f"qa.native_container_text_audit.{key}: must equal 0")
+            native_manifest = load_verified_evidence_manifest(
+                project_root,
+                native_audit.get("records_manifest_path"),
+                native_audit.get("records_manifest_sha256"),
+                "qa.native_container_text_audit.records_manifest",
+                errors,
+                verify_files,
+            )
+            if native_manifest is not None:
+                native_records = as_list(native_manifest.get("records"), "qa.native_container_text_manifest.records", errors)
+                if len(native_records) != native_audit.get("communicative_container_expected_count"):
+                    errors.append(
+                        "qa.native_container_text_manifest.records: count must equal communicative_container_expected_count"
+                    )
+                seen_containers: set[str] = set()
+                for index, raw_record in enumerate(native_records):
+                    path = f"qa.native_container_text_manifest.records[{index}]"
+                    record = as_object(raw_record, path, errors)
+                    container_id = record.get("container_id")
+                    if isinstance(container_id, str):
+                        if container_id in seen_containers:
+                            errors.append(f"{path}.container_id: duplicate {container_id}")
+                        seen_containers.add(container_id)
+                    errors.extend(validate_native_container_text_record(record, path))
+
+            fit_audit = as_object(
+                data.get("adaptive_composition_fit_audit"),
+                "qa.adaptive_composition_fit_audit",
+                errors,
+            )
+            require_true(fit_audit, "per_shot_records_complete", "qa.adaptive_composition_fit_audit", errors)
+            require_true(fit_audit, "exception_records_complete", "qa.adaptive_composition_fit_audit", errors)
+            if fit_audit.get("fit_mode") != "contain":
+                errors.append("qa.adaptive_composition_fit_audit.fit_mode: must equal contain")
+            require_exact_numeric_range(
+                fit_audit.get("target_scale_change_percent_range"),
+                (8, 12),
+                "qa.adaptive_composition_fit_audit.target_scale_change_percent_range",
+                errors,
+            )
+            require_exact_numeric_range(
+                fit_audit.get("allowed_tuning_percent_range"),
+                (4, 15),
+                "qa.adaptive_composition_fit_audit.allowed_tuning_percent_range",
+                errors,
+            )
+            hard_safe_bounds = validate_pixel_bounds(
+                fit_audit.get("hard_safe_bounds_px"),
+                "qa.adaptive_composition_fit_audit.hard_safe_bounds_px",
+                errors,
+            )
+            preferred_stage_bounds = validate_pixel_bounds(
+                fit_audit.get("preferred_stage_bounds_px"),
+                "qa.adaptive_composition_fit_audit.preferred_stage_bounds_px",
+                errors,
+            )
+            if hard_safe_bounds and preferred_stage_bounds and not (
+                hard_safe_bounds["left"] <= preferred_stage_bounds["left"]
+                and hard_safe_bounds["top"] <= preferred_stage_bounds["top"]
+                and hard_safe_bounds["right"] >= preferred_stage_bounds["right"]
+                and hard_safe_bounds["bottom"] >= preferred_stage_bounds["bottom"]
+            ):
+                errors.append(
+                    "qa.adaptive_composition_fit_audit: preferred stage must stay inside hard safe bounds"
+                )
+            for expected_key, reviewed_key in (("local_component_expected_shots", "local_component_shots_reviewed"),):
+                expected_count = fit_audit.get(expected_key)
+                reviewed_count = fit_audit.get(reviewed_key)
+                if not isinstance(expected_count, int) or isinstance(expected_count, bool) or expected_count < 0:
+                    errors.append(f"qa.adaptive_composition_fit_audit.{expected_key}: must be non-negative")
+                if not isinstance(reviewed_count, int) or isinstance(reviewed_count, bool) or reviewed_count < 0:
+                    errors.append(f"qa.adaptive_composition_fit_audit.{reviewed_key}: must be non-negative")
+                if expected_count != reviewed_count:
+                    errors.append(f"qa.adaptive_composition_fit_audit.{reviewed_key}: must equal {expected_key}")
+            for key in (
+                "safe_bounds_violation_count",
+                "critical_crop_count",
+                "visual_drift_count",
+                "main_visual_overlap_count",
+                "uncomfortable_density_count",
+            ):
+                if fit_audit.get(key) != 0:
+                    errors.append(f"qa.adaptive_composition_fit_audit.{key}: must equal 0")
+            underfilled = fit_audit.get("underfilled_primary_visual_count")
+            if not isinstance(underfilled, int) or isinstance(underfilled, bool) or underfilled < 0:
+                errors.append(
+                    "qa.adaptive_composition_fit_audit.underfilled_primary_visual_count: must be non-negative"
+                )
+            fit_manifest = load_verified_evidence_manifest(
+                project_root,
+                fit_audit.get("records_manifest_path"),
+                fit_audit.get("records_manifest_sha256"),
+                "qa.adaptive_composition_fit_audit.records_manifest",
+                errors,
+                verify_files,
+            )
+            if fit_manifest is not None:
+                fit_records = as_list(fit_manifest.get("records"), "qa.adaptive_composition_fit_manifest.records", errors)
+                if len(fit_records) != fit_audit.get("local_component_expected_shots"):
+                    errors.append(
+                        "qa.adaptive_composition_fit_manifest.records: count must equal local_component_expected_shots"
+                    )
+                seen_fit_shots: set[str] = set()
+                underfilled_records = 0
+                for index, raw_record in enumerate(fit_records):
+                    path = f"qa.adaptive_composition_fit_manifest.records[{index}]"
+                    record = as_object(raw_record, path, errors)
+                    shot_id = record.get("shot_id")
+                    if isinstance(shot_id, str):
+                        if shot_id in seen_fit_shots:
+                            errors.append(f"{path}.shot_id: duplicate {shot_id}")
+                        seen_fit_shots.add(shot_id)
+                    if numeric(record.get("primary_axis_fill_ratio")) and not 0.72 <= record["primary_axis_fill_ratio"] <= 0.9:
+                        underfilled_records += 1
+                    errors.extend(
+                        validate_adaptive_fit_record(
+                            record,
+                            path,
+                            expected.get("width"),
+                            expected.get("height"),
+                            hard_safe_bounds,
+                        )
+                    )
+                if underfilled_records != underfilled:
+                    errors.append(
+                        "qa.adaptive_composition_fit_audit.underfilled_primary_visual_count: "
+                        "must match the evidence records"
+                    )
 
         caption_audit = as_object(
             data.get("caption_visual_hierarchy_audit"),
@@ -1553,6 +2074,7 @@ def validate_qa(data: dict[str, Any], verify_files: bool = False) -> list[str]:
 def self_test() -> int:
     sha = "a" * 64
     project = {
+        "schema_version": "1.2",
         "pipeline": "editorial-magazine-explainer",
         "project_id": "self-test",
         "project_root": "C:/self-test",
@@ -1613,6 +2135,7 @@ def self_test() -> int:
         "final_composition_started": False,
         "shots": [
             {
+                "schema_version": "1.2",
                 "shot_id": "S01",
                 "start_seconds": 0,
                 "end_seconds": 3,
@@ -1659,10 +2182,35 @@ def self_test() -> int:
                         "container_id": "C1",
                         "kind": "speech_bubble",
                         "communicative": True,
+                        "text_source": "local_compositor",
+                        "parent_layer_id": "L1",
+                        "coordinate_space": "parent_local",
+                        "text_region_normalized": {"x": 0.12, "y": 0.18, "width": 0.76, "height": 0.48},
+                        "padding_percent": 6,
+                        "perspective_mode": "matched_parent",
+                        "clip_to_container": True,
+                        "moves_with_parent": True,
+                        "visual_hierarchy_role": "primary",
+                        "minimum_font_px": 32,
                         "text": "为什么考研？",
                         "decorative_reason": "",
                     }
                 ],
+                "adaptive_composition_fit": {
+                    "required": True,
+                    "fit_mode": "contain",
+                    "approved_baseline_scale": 1.0,
+                    "target_scale_change_percent_range": [8, 12],
+                    "allowed_tuning_percent_range": [4, 15],
+                    "hard_safe_bounds_px": {"left": 72, "top": 300, "right": 1008, "bottom": 1290},
+                    "preferred_stage_bounds_px": {"left": 96, "top": 380, "right": 984, "bottom": 1280},
+                    "preferred_primary_axis_fill_ratio_range": [0.72, 0.9],
+                    "maximum_width_fill_ratio": 0.9,
+                    "maximum_height_fill_ratio": 0.92,
+                    "maximum_center_offset_x_px": 90,
+                    "per_shot_tuning_required": True,
+                    "dense_shot_exception_reason": "",
+                },
                 "previous_primary_exit_defined": True,
                 "caption_layout": {
                     "approved_text": "学历高一点总没坏处吧",
@@ -1677,6 +2225,8 @@ def self_test() -> int:
                     "whole_image_motion_as_semantic_animation",
                     "generated_readable_chinese",
                     "empty_communicative_container",
+                    "detached_overlay_text_for_semantic_container",
+                    "uniform_global_scale_without_per_shot_fit",
                     "production_markers_in_final_frame",
                 ],
                 "gate_2_status": "waiting_user_review",
@@ -1702,7 +2252,7 @@ def self_test() -> int:
         },
     }
     revision = {
-        "schema_version": "1.1",
+        "schema_version": "1.2",
         "project_id": "self-test",
         "project_root": "C:/self-test",
         "revision": "v2",
@@ -1731,10 +2281,35 @@ def self_test() -> int:
             },
             "local_component_scale_percent": {
                 "target_range": [8, 12],
+                "allowed_tuning_range": [4, 15],
                 "per_shot_records_required": True,
                 "below_range_requires_reason": True,
                 "outside_or_zero_requires_approved_reason": True,
                 "center_concentration_required": True,
+            },
+            "native_container_text_binding": {
+                "required": True,
+                "local_compositor_required": True,
+                "parent_local_coordinates_required": True,
+                "clip_to_container_required": True,
+                "moves_with_parent_required": True,
+                "perspective_match_required": True,
+                "floating_overlay_allowed": False,
+                "per_container_records_required": True,
+            },
+            "adaptive_composition_fit": {
+                "required": True,
+                "fit_mode": "contain",
+                "target_scale_change_percent_range": [8, 12],
+                "allowed_tuning_percent_range": [4, 15],
+                "hard_safe_bounds_px": {"left": 72, "top": 300, "right": 1008, "bottom": 1290},
+                "preferred_stage_bounds_px": {"left": 96, "top": 380, "right": 984, "bottom": 1280},
+                "preferred_primary_axis_fill_ratio_range": [0.72, 0.9],
+                "maximum_width_fill_ratio": 0.9,
+                "maximum_height_fill_ratio": 0.92,
+                "maximum_center_offset_x_px": 90,
+                "per_shot_tuning_required": True,
+                "safe_region_and_main_visual_protection_required": True,
             },
             "full_illustration_inner_scale_percent": {
                 "target_range": [4, 6],
@@ -1787,6 +2362,7 @@ def self_test() -> int:
         ],
     }
     gate2 = {
+        "schema_version": "1.2",
         "project_id": "self-test",
         "project_root": "C:/self-test",
         "status": "approved",
@@ -1808,11 +2384,13 @@ def self_test() -> int:
                 "independent_layer_plan_present": True,
                 "layer_plan_path": "S01-layers.json",
                 "layer_plan_sha256": sha,
+                "container_native_text_plan_present": True,
+                "adaptive_composition_fit_plan_present": True,
             }
         ],
         "whole_film_artifacts": {
             key: {"path": f"{key}.json", "sha256": sha}
-            for key in REQUIRED_GATE2_WHOLE_FILM_ARTIFACTS
+            for key in REQUIRED_GATE2_WHOLE_FILM_ARTIFACTS + GATE2_1_2_WHOLE_FILM_ARTIFACTS
         },
         "approval": {
             "whole_package_user_approved": True,
@@ -1823,7 +2401,7 @@ def self_test() -> int:
     }
     qa_checks = {key: True for key in REQUIRED_QA_CHECKS}
     qa = {
-        "schema_version": "1.1",
+        "schema_version": "1.2",
         "project_id": "self-test",
         "project_root": "C:/self-test",
         "version": "v2",
@@ -1867,6 +2445,8 @@ def self_test() -> int:
             "caption_overflow_count": 0,
             "caption_safe_area_violation_count": 0,
             "caption_main_visual_overlap_count": 0,
+            "native_container_text_violation_count": 0,
+            "adaptive_composition_fit_violation_count": 0,
         },
         "asset_class_scale_audit": {
             "flow_locked_unchanged": True,
@@ -1888,6 +2468,42 @@ def self_test() -> int:
             "scale_exception_records_complete": True,
             "asset_record_manifest_path": "asset-records.json",
             "asset_record_manifest_sha256": sha,
+        },
+        "native_container_text_audit": {
+            "communicative_container_expected_count": 1,
+            "communicative_container_reviewed_count": 1,
+            "per_container_records_complete": True,
+            "local_compositor_used": True,
+            "parent_local_coordinates_used": True,
+            "parent_binding_failure_count": 0,
+            "outside_container_count": 0,
+            "clipping_mask_failure_count": 0,
+            "perspective_mismatch_count": 0,
+            "text_overflow_count": 0,
+            "floating_overlay_count": 0,
+            "parent_motion_desync_count": 0,
+            "unreadable_count": 0,
+            "records_manifest_path": "native-container-text.json",
+            "records_manifest_sha256": sha,
+        },
+        "adaptive_composition_fit_audit": {
+            "local_component_expected_shots": 1,
+            "local_component_shots_reviewed": 1,
+            "per_shot_records_complete": True,
+            "fit_mode": "contain",
+            "target_scale_change_percent_range": [8, 12],
+            "allowed_tuning_percent_range": [4, 15],
+            "hard_safe_bounds_px": {"left": 72, "top": 300, "right": 1008, "bottom": 1290},
+            "preferred_stage_bounds_px": {"left": 96, "top": 380, "right": 984, "bottom": 1280},
+            "safe_bounds_violation_count": 0,
+            "critical_crop_count": 0,
+            "visual_drift_count": 0,
+            "main_visual_overlap_count": 0,
+            "uncomfortable_density_count": 0,
+            "underfilled_primary_visual_count": 0,
+            "exception_records_complete": True,
+            "records_manifest_path": "adaptive-fit.json",
+            "records_manifest_sha256": sha,
         },
         "caption_visual_hierarchy_audit": {
             "baseline_min_rendered_font_px": 48,
@@ -1955,6 +2571,42 @@ def self_test() -> int:
         "main_visual_clear": True,
         "explanatory_typography_clear": True,
     }
+    native_container_record = {
+        "container_id": "C1",
+        "shot_id": "S01",
+        "parent_layer_id": "L1",
+        "text_source": "local_compositor",
+        "coordinate_space": "parent_local",
+        "text_region_normalized": {"x": 0.12, "y": 0.18, "width": 0.76, "height": 0.48},
+        "padding_percent": 6,
+        "perspective_mode": "matched_parent",
+        "minimum_font_px": 32,
+        "clip_to_container": True,
+        "moves_with_parent": True,
+        "text_inside_container": True,
+        "overflow_absent": True,
+        "perspective_matched": True,
+        "floating_overlay_absent": True,
+        "readable": True,
+        "evidence_ref": "S01-native-text.png",
+    }
+    adaptive_fit_record = {
+        "shot_id": "S01",
+        "baseline_scale": 1.0,
+        "final_scale": 1.1,
+        "scale_change_percent": 10,
+        "final_bbox_px": {"x": 180, "y": 400, "width": 720, "height": 800},
+        "width_fill_ratio": 720 / 1080,
+        "height_fill_ratio": 800 / 1920,
+        "primary_axis_fill_ratio": 0.8,
+        "center_offset_x_px": 0,
+        "critical_crop_absent": True,
+        "visual_drift_absent": True,
+        "main_visual_clear": True,
+        "comfortable_density": True,
+        "exception_approved": False,
+        "evidence_ref": "S01-fit.png",
+    }
     failures = (
         validate_project(project)
         + validate_shot_contract(project["shots"][0])
@@ -1966,14 +2618,35 @@ def self_test() -> int:
             verify_files=False,
         )
         + validate_caption_audit_record(caption_record, "self_test.caption_record", 1080, 1920)
+        + validate_native_container_text_record(native_container_record, "self_test.native_container_record")
+        + validate_adaptive_fit_record(
+            adaptive_fit_record,
+            "self_test.adaptive_fit_record",
+            1080,
+            1920,
+            {"left": 72, "top": 300, "right": 1008, "bottom": 1290},
+        )
     )
     if failures:
         for failure in failures:
             print(f"SELF-TEST FAIL: {failure}", file=sys.stderr)
         return 1
-    legacy_qa = json.loads(json.dumps(qa))
+    legacy_1_1_qa = json.loads(json.dumps(qa))
+    legacy_1_1_qa["schema_version"] = "1.1"
+    for key in QA_1_2_CHECKS:
+        legacy_1_1_qa["checks"].pop(key, None)
+    for key in ("native_container_text_violation_count", "adaptive_composition_fit_violation_count"):
+        legacy_1_1_qa["metrics"].pop(key, None)
+    legacy_1_1_qa.pop("native_container_text_audit", None)
+    legacy_1_1_qa.pop("adaptive_composition_fit_audit", None)
+    legacy_1_1_failures = validate_qa(legacy_1_1_qa)
+    if legacy_1_1_failures:
+        for failure in legacy_1_1_failures:
+            print(f"SELF-TEST FAIL: v1.1 QA compatibility regression: {failure}", file=sys.stderr)
+        return 1
+    legacy_qa = json.loads(json.dumps(legacy_1_1_qa))
     legacy_qa["schema_version"] = "1.0"
-    for key in QA_1_1_CHECKS:
+    for key in QA_1_1_CHECKS | QA_1_2_CHECKS:
         legacy_qa["checks"].pop(key, None)
     for key in (
         "asset_scale_violation_count",
@@ -1991,6 +2664,37 @@ def self_test() -> int:
         for failure in legacy_failures:
             print(f"SELF-TEST FAIL: v1.0 QA compatibility regression: {failure}", file=sys.stderr)
         return 1
+    legacy_project = json.loads(json.dumps(project))
+    legacy_project["schema_version"] = "1.1"
+    legacy_shot = legacy_project["shots"][0]
+    legacy_shot["schema_version"] = "1.1"
+    legacy_shot.pop("adaptive_composition_fit", None)
+    for key in (
+        "text_source",
+        "parent_layer_id",
+        "coordinate_space",
+        "text_region_normalized",
+        "padding_percent",
+        "perspective_mode",
+        "clip_to_container",
+        "moves_with_parent",
+        "visual_hierarchy_role",
+        "minimum_font_px",
+    ):
+        legacy_shot["semantic_containers"][0].pop(key, None)
+    legacy_shot["prohibited_shortcuts"] = [
+        value
+        for value in legacy_shot["prohibited_shortcuts"]
+        if value not in {
+            "detached_overlay_text_for_semantic_container",
+            "uniform_global_scale_without_per_shot_fit",
+        }
+    ]
+    legacy_project_failures = validate_project(legacy_project)
+    if legacy_project_failures:
+        for failure in legacy_project_failures:
+            print(f"SELF-TEST FAIL: v1.1 project compatibility regression: {failure}", file=sys.stderr)
+        return 1
     invalid = json.loads(json.dumps(project))
     invalid["gates"]["gate_2"] = "waiting_user_review"
     invalid["local_production_started"] = True
@@ -2006,6 +2710,16 @@ def self_test() -> int:
     invalid["shots"][0]["semantic_containers"][0]["text"] = ""
     if not validate_project(invalid):
         print("SELF-TEST FAIL: validator did not reject an empty communicative container", file=sys.stderr)
+        return 1
+    invalid = json.loads(json.dumps(project))
+    del invalid["shots"][0]["semantic_containers"][0]["parent_layer_id"]
+    if not validate_project(invalid):
+        print("SELF-TEST FAIL: validator did not reject detached semantic-container text", file=sys.stderr)
+        return 1
+    invalid = json.loads(json.dumps(project))
+    invalid["shots"][0]["adaptive_composition_fit"]["allowed_tuning_percent_range"] = [0, 99]
+    if not validate_project(invalid):
+        print("SELF-TEST FAIL: validator did not reject a fake adaptive-fit range", file=sys.stderr)
         return 1
     invalid = json.loads(json.dumps(project))
     invalid["shots"][0]["stages"][0]["explanation_phrase"] = invalid["shots"][0]["stages"][0]["caption_text"]
@@ -2133,6 +2847,22 @@ def self_test() -> int:
     invalid_caption_record["centerward_offset_px"] = 70
     if not validate_caption_audit_record(invalid_caption_record, "self_test.caption_record", 1080, 1920):
         print("SELF-TEST FAIL: caption audit trusted a claimed positive move over reverse coordinates", file=sys.stderr)
+        return 1
+    invalid_native_record = json.loads(json.dumps(native_container_record))
+    invalid_native_record["floating_overlay_absent"] = False
+    if not validate_native_container_text_record(invalid_native_record, "self_test.native_container_record"):
+        print("SELF-TEST FAIL: native-container audit accepted floating overlay text", file=sys.stderr)
+        return 1
+    invalid_fit_record = json.loads(json.dumps(adaptive_fit_record))
+    invalid_fit_record["final_bbox_px"]["x"] = 50
+    if not validate_adaptive_fit_record(
+        invalid_fit_record,
+        "self_test.adaptive_fit_record",
+        1080,
+        1920,
+        {"left": 72, "top": 300, "right": 1008, "bottom": 1290},
+    ):
+        print("SELF-TEST FAIL: adaptive-fit audit accepted a safe-bounds violation", file=sys.stderr)
         return 1
     invalid = json.loads(json.dumps(project))
     invalid["gates"]["gate_1"] = "approved"
@@ -2264,6 +2994,30 @@ def cross_validate_contracts(
     if caption_audit.get("caption_expected_count") != project_caption_count:
         errors.append("cross-contract: QA caption_expected_count must equal project captions.count")
 
+    if schema_at_least(qa, 1, 2):
+        communicative_container_ids = {
+            str(container.get("container_id"))
+            for shot in project_shots
+            for container in shot.get("semantic_containers", [])
+            if isinstance(container, dict)
+            and container.get("communicative") is True
+            and is_filled(container.get("container_id"))
+        }
+        native_audit = qa.get("native_container_text_audit", {})
+        if native_audit.get("communicative_container_expected_count") != len(communicative_container_ids):
+            errors.append(
+                "cross-contract: QA communicative-container count must equal the project contract"
+            )
+        fit_audit = qa.get("adaptive_composition_fit_audit", {})
+        if fit_audit.get("local_component_expected_shots") != len(
+            project_ids_by_family["independent_component_animation"]
+        ):
+            errors.append(
+                "cross-contract: QA adaptive-fit shot count must equal project independent-component shots"
+            )
+        if not schema_at_least(revision, 1, 2):
+            errors.append("cross-contract: schema 1.2 passing QA requires a schema 1.2 revision lock")
+
     if not verify_files:
         return errors
     project_root = project_root_from(qa, "qa", errors, verify_files=True)
@@ -2323,6 +3077,45 @@ def cross_validate_contracts(
             errors.append(
                 "cross-contract: protection manifest must cover every shot referenced by caption audit records"
             )
+    if schema_at_least(qa, 1, 2):
+        native_audit = qa.get("native_container_text_audit", {})
+        native_manifest = load_verified_evidence_manifest(
+            project_root,
+            native_audit.get("records_manifest_path"),
+            native_audit.get("records_manifest_sha256"),
+            "cross-contract.native_container_text_manifest",
+            errors,
+            True,
+        )
+        if native_manifest is not None:
+            native_ids = {
+                str(record.get("container_id"))
+                for record in native_manifest.get("records", [])
+                if isinstance(record, dict) and is_filled(record.get("container_id"))
+            }
+            if native_ids != communicative_container_ids:
+                errors.append(
+                    "cross-contract: native-container-text manifest must cover every communicative container"
+                )
+        fit_audit = qa.get("adaptive_composition_fit_audit", {})
+        fit_manifest = load_verified_evidence_manifest(
+            project_root,
+            fit_audit.get("records_manifest_path"),
+            fit_audit.get("records_manifest_sha256"),
+            "cross-contract.adaptive_composition_fit_manifest",
+            errors,
+            True,
+        )
+        if fit_manifest is not None:
+            fit_ids = {
+                str(record.get("shot_id"))
+                for record in fit_manifest.get("records", [])
+                if isinstance(record, dict) and is_filled(record.get("shot_id"))
+            }
+            if fit_ids != project_ids_by_family["independent_component_animation"]:
+                errors.append(
+                    "cross-contract: adaptive-fit manifest must cover every independent-component shot"
+                )
     return errors
 
 

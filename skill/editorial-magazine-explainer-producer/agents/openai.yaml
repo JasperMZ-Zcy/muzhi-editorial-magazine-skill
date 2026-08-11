@@ -1,4 +1,4 @@
 interface:
   display_name: "教培杂志插画语义图解"
   short_description: "把教育知识口播做成稳定、可读、可验收的杂志插画语义动画"
-  default_prompt: "Use $editorial-magazine-explainer-producer to turn this education or training narration into stable editorial-magazine semantic scenes. Preserve approved assets, avoid sentence-by-sentence scene churn, and enforce caption readability, revision locks, and every review gate."
+  default_prompt: "Use $editorial-magazine-explainer-producer to turn this education or training narration into stable editorial-magazine semantic scenes. Bind all communicative text inside its real parent component, then adaptively enlarge and fit each local visual group without cropping, drift, or main-visual obstruction. Preserve approved Flow assets, avoid sentence-by-sentence scene churn, and enforce caption readability, revision locks, and every review gate."

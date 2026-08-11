@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.2",
+  "frame_width": 1080,
+  "frame_height": 1920,
+  "hard_safe_bounds_px": {"left": 72, "top": 300, "right": 1008, "bottom": 1290},
+  "records": [
+    {
+      "shot_id": "S01",
+      "baseline_scale": 1.0,
+      "final_scale": 1.1,
+      "scale_change_percent": 10,
+      "final_bbox_px": {"x": 180, "y": 400, "width": 720, "height": 800},
+      "width_fill_ratio": 0.6667,
+      "height_fill_ratio": 0.4167,
+      "primary_axis_fill_ratio": 0.8,
+      "center_offset_x_px": 0,
+      "critical_crop_absent": true,
+      "visual_drift_absent": true,
+      "main_visual_clear": true,
+      "comfortable_density": true,
+      "exception_approved": false,
+      "exception_reason": "",
+      "exception_approved_at": "",
+      "evidence_ref": "__FILL_KEYFRAME_OR_TEMPORAL_SWEEP_EVIDENCE__"
+    }
+  ]
+}
