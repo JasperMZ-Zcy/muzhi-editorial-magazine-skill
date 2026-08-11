@@ -2,6 +2,7 @@
 param(
     [string]$CodexHome = "",
     [string]$WorkspaceRoot = "",
+    [switch]$Standalone,
     [switch]$NonInteractive,
     [switch]$SkipEnvironmentCheck
 )
@@ -93,7 +94,7 @@ function Assert-ReleaseIntegrity {
     foreach ($file in Get-ChildItem -Recurse -File -LiteralPath $sourceRoot | Where-Object {
         $_.FullName -notmatch '[\\/]__pycache__[\\/]' -and $_.Extension -ne '.pyc'
     }) {
-        $relative = $file.FullName.Substring($repoRoot.Length + 1).Replace('\', '/')
+        $relative = $file.FullName.Substring($repoPrefix.Length).Replace('\', '/')
         if (-not $listedFiles.Contains($relative)) {
             throw "Skill 源目录含有未列入发行清单的文件，拒绝安装：$relative"
         }
@@ -129,27 +130,52 @@ if (Test-Path -LiteralPath $existingConfigPath -PathType Leaf) {
     }
 }
 
-$preserveExistingConfig = $false
-if ([string]::IsNullOrWhiteSpace($WorkspaceRoot)) {
-    if (-not [string]::IsNullOrWhiteSpace($env:MUZHI_WORKSPACE_ROOT)) {
-        $WorkspaceRoot = $env:MUZHI_WORKSPACE_ROOT
-    } elseif ($null -ne $existingConfig -and -not [string]::IsNullOrWhiteSpace([string]$existingConfig.workspace_root)) {
-        $WorkspaceRoot = [string]$existingConfig.workspace_root
-        $preserveExistingConfig = $true
-    } else {
-        $WorkspaceRoot = Find-MuzhiWorkspace
+$workspaceWasExplicit = -not [string]::IsNullOrWhiteSpace($WorkspaceRoot)
+if ($Standalone -and $workspaceWasExplicit) {
+    throw '不能同时使用 -Standalone 和 -WorkspaceRoot；请只选择一种运行模式。'
+}
+
+$existingMode = ''
+if ($null -ne $existingConfig) {
+    $existingMode = [string]$existingConfig.mode
+    if ([string]::IsNullOrWhiteSpace($existingMode)) {
+        $existingMode = if ([string]::IsNullOrWhiteSpace([string]$existingConfig.workspace_root)) { 'standalone' } else { 'workspace' }
     }
 }
 
-if ([string]::IsNullOrWhiteSpace($WorkspaceRoot) -and -not $NonInteractive) {
-    $WorkspaceRoot = Read-Host '请输入“创业之路”工作区根目录（其中包含 OpenMontage 和 AI_START_HERE.md）'
+$selectedMode = if ($Standalone) { 'standalone' } else { '' }
+if ([string]::IsNullOrWhiteSpace($selectedMode) -and $workspaceWasExplicit) {
+    $selectedMode = 'workspace'
+}
+if ([string]::IsNullOrWhiteSpace($selectedMode) -and -not [string]::IsNullOrWhiteSpace($env:MUZHI_WORKSPACE_ROOT)) {
+    $WorkspaceRoot = $env:MUZHI_WORKSPACE_ROOT
+    $selectedMode = 'workspace'
+}
+if ([string]::IsNullOrWhiteSpace($selectedMode) -and $null -ne $existingConfig) {
+    if ($existingMode -eq 'standalone') {
+        $selectedMode = 'standalone'
+    } elseif (-not [string]::IsNullOrWhiteSpace([string]$existingConfig.workspace_root)) {
+        $WorkspaceRoot = [string]$existingConfig.workspace_root
+        $selectedMode = 'workspace'
+    }
+}
+if ([string]::IsNullOrWhiteSpace($selectedMode)) {
+    $WorkspaceRoot = Find-MuzhiWorkspace
+    if (-not [string]::IsNullOrWhiteSpace($WorkspaceRoot)) {
+        $selectedMode = 'workspace'
+    }
+}
+if ([string]::IsNullOrWhiteSpace($selectedMode) -and -not $NonInteractive) {
+    $WorkspaceRoot = Read-Host '可选：输入牧之工作区根目录；直接回车则按独立模式安装'
+    $selectedMode = if ([string]::IsNullOrWhiteSpace($WorkspaceRoot)) { 'standalone' } else { 'workspace' }
+}
+if ([string]::IsNullOrWhiteSpace($selectedMode)) {
+    $selectedMode = 'standalone'
 }
 
 $resolvedWorkspace = $null
-if (-not [string]::IsNullOrWhiteSpace($WorkspaceRoot)) {
+if ($selectedMode -eq 'workspace') {
     $resolvedWorkspace = Resolve-MuzhiWorkspace -Candidate $WorkspaceRoot
-} elseif ($NonInteractive) {
-    Write-Warning '未配置工作区；Skill 已安装，但第一次制作视频前仍需配置工作区路径。'
 }
 
 New-Item -ItemType Directory -Path $skillsRoot -Force | Out-Null
@@ -162,27 +188,26 @@ Get-ChildItem -Force -LiteralPath $sourceRoot | ForEach-Object {
     Copy-Item -LiteralPath $_.FullName -Destination $staging -Recurse -Force
 }
 
-if ($preserveExistingConfig -and $null -ne $existingConfig) {
-    New-Item -ItemType Directory -Path (Join-Path $staging 'config') -Force | Out-Null
-    Copy-Item -LiteralPath $existingConfigPath -Destination (Join-Path $staging 'config\local.json') -Force
-} elseif ($null -ne $resolvedWorkspace) {
-    $desktopRoot = [Environment]::GetFolderPath('Desktop')
-    $desktopReviewRoot = Join-Path $desktopRoot '牧之远见-视频预览'
-    New-Item -ItemType Directory -Path $desktopReviewRoot -Force | Out-Null
-    $config = [ordered]@{
-        schema_version = 1
-        skill_name = $skillName
-        workspace_root = $resolvedWorkspace
-        openmontage_root = Join-Path $resolvedWorkspace 'OpenMontage'
-        knowledge_base_root = Join-Path $resolvedWorkspace 'OpenMontage\创业知识库'
-        desktop_review_root = $desktopReviewRoot
-        configured_at_utc = [DateTime]::UtcNow.ToString('o')
-    }
-    Write-Utf8NoBom -Path (Join-Path $staging 'config\local.json') -Content ($config | ConvertTo-Json -Depth 5)
-} elseif ($null -ne $existingConfig) {
-    New-Item -ItemType Directory -Path (Join-Path $staging 'config') -Force | Out-Null
-    Copy-Item -LiteralPath $existingConfigPath -Destination (Join-Path $staging 'config\local.json') -Force
+$desktopRoot = [Environment]::GetFolderPath('Desktop')
+$defaultReviewFolder = if ($selectedMode -eq 'workspace') { '牧之远见-视频预览' } else { 'Editorial-Magazine-Review' }
+$desktopReviewRoot = Join-Path $desktopRoot $defaultReviewFolder
+if ($null -ne $existingConfig -and $existingMode -eq $selectedMode -and
+    -not [string]::IsNullOrWhiteSpace([string]$existingConfig.desktop_review_root)) {
+    $desktopReviewRoot = [string]$existingConfig.desktop_review_root
 }
+New-Item -ItemType Directory -Path $desktopReviewRoot -Force | Out-Null
+
+$config = [ordered]@{
+    schema_version = 2
+    skill_name = $skillName
+    mode = $selectedMode
+    workspace_root = if ($null -ne $resolvedWorkspace) { $resolvedWorkspace } else { '' }
+    openmontage_root = if ($null -ne $resolvedWorkspace) { Join-Path $resolvedWorkspace 'OpenMontage' } else { '' }
+    knowledge_base_root = if ($null -ne $resolvedWorkspace) { Join-Path $resolvedWorkspace 'OpenMontage\创业知识库' } else { '' }
+    desktop_review_root = $desktopReviewRoot
+    configured_at_utc = [DateTime]::UtcNow.ToString('o')
+}
+Write-Utf8NoBom -Path (Join-Path $staging 'config\local.json') -Content ($config | ConvertTo-Json -Depth 5)
 
 $backupPath = $null
 $movedExisting = $false
@@ -215,6 +240,7 @@ if (-not (Test-Path -LiteralPath $installedSkillPath -PathType Leaf)) {
 
 Write-Host "安装完成：$destination" -ForegroundColor Green
 Write-Host "版本：$($manifest.version)"
+Write-Host "运行模式：$selectedMode"
 if ($null -ne $backupPath) {
     Write-Host "上一版本回退副本：$backupPath"
 }

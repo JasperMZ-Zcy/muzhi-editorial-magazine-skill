@@ -1,4 +1,4 @@
 interface:
-  display_name: "牧之远见·杂志插画语义图解"
-  short_description: "严格执行母钟、全量逐镜审核、资产分级、字幕可读性、返工锁定和成片质检"
-  default_prompt: "Use $editorial-magazine-explainer-producer to produce or continue this narration with the locked 牧之远见 editorial-magazine semantic-explainer pipeline, preserve approved Flow, and enforce asset-class scaling plus caption hierarchy, contrast, safe placement, and every review gate."
+  display_name: "教培杂志插画语义图解"
+  short_description: "把教育知识口播做成稳定、可读、可验收的杂志插画语义动画"
+  default_prompt: "Use $editorial-magazine-explainer-producer to turn this education or training narration into stable editorial-magazine semantic scenes. Preserve approved assets, avoid sentence-by-sentence scene churn, and enforce caption readability, revision locks, and every review gate."

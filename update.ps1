@@ -2,6 +2,7 @@
 param(
     [string]$CodexHome = "",
     [string]$WorkspaceRoot = "",
+    [switch]$Standalone,
     [switch]$NonInteractive,
     [switch]$SkipEnvironmentCheck
 )
@@ -21,6 +22,7 @@ if ($LASTEXITCODE -ne 0) {
 $installArgs = @{}
 if (-not [string]::IsNullOrWhiteSpace($CodexHome)) { $installArgs.CodexHome = $CodexHome }
 if (-not [string]::IsNullOrWhiteSpace($WorkspaceRoot)) { $installArgs.WorkspaceRoot = $WorkspaceRoot }
+if ($Standalone) { $installArgs.Standalone = $true }
 if ($NonInteractive) { $installArgs.NonInteractive = $true }
 if ($SkipEnvironmentCheck) { $installArgs.SkipEnvironmentCheck = $true }
 & (Join-Path $repoRoot 'install.ps1') @installArgs

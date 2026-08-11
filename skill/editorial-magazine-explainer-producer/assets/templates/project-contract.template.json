@@ -38,7 +38,7 @@
     "longest_caption_boundary_test_required": true
   },
   "voice": {
-    "profile": "muzhi_bright_youth",
+    "profile": "__FILL_APPROVED_VOICE_PROFILE__",
     "duration_and_sample_count_must_match_master": true,
     "report_required": true,
     "formal_path": "__FILL_WHEN_RENDER_READY__",
