@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.2",
+  "project_id": "__FILL__",
+  "communicative_container_expected_count": 0,
+  "local_component_expected_shots": 0,
+  "all_container_plans_complete": false,
+  "all_local_fit_plans_complete": false,
+  "execution_order": [
+    "inventory_communicative_containers",
+    "bind_text_in_parent_local_coordinates",
+    "fit_padding_type_perspective_and_mask",
+    "group_parent_and_native_text",
+    "adaptively_scale_and_center_each_local_shot",
+    "review_entry_core_exit_and_full_watch"
+  ],
+  "target_scale_change_percent_range": [8, 12],
+  "allowed_tuning_percent_range": [4, 15],
+  "hard_safe_bounds_px": {"left": 72, "top": 300, "right": 1008, "bottom": 1290},
+  "preferred_stage_bounds_px": {"left": 96, "top": 380, "right": 984, "bottom": 1280},
+  "container_records_path": "__FILL__",
+  "container_records_sha256": "__FILL_64_HEX__",
+  "fit_records_path": "__FILL__",
+  "fit_records_sha256": "__FILL_64_HEX__"
+}

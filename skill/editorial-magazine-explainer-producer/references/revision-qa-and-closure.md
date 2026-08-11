@@ -27,6 +27,8 @@
 
 - `flow_policy`：是否完全锁定，以及锁定的画幅、裁切、速度、动作和绝对时码；
 - `local_component_scale_percent`：默认目标约 8%–12%，逐镜允许值和例外理由；
+- `native_container_text_binding`：本地合成、父组件本地坐标、内部区域、遮罩、透视和同步运动；漂浮覆盖必须禁止；
+- `adaptive_composition_fit`：先补组件内文字再逐镜 `contain` 适配，目标 8%–12%、允许微调约 4%–15%，并声明安全边界、主轴填充、中心偏移、逐镜微调和主视觉保护；
 - `full_illustration_inner_scale_percent`：默认约 4%–6%，并声明不得越过原边框；
 - `caption_centerward_move`：字幕朝中心安全区移动的目标与逐镜避让范围；
 - `caption_contrast_strategy`：最终字体、描边、投影/底衬、关键词色和最差背景检查方式；
@@ -80,6 +82,8 @@
 - 每个组件镜头的每个语义阶段；
 - 每个 Flow 和整幅插画镜头；
 - 每个本地组件镜头的基线比例、最终比例、中部集中、安全边距和构图完整性；
+- 每个承担语义的容器文字是否真正位于父组件内部，透视、遮罩、溢出、可读性和父子运动是否一致；
+- 每个本地组件镜头的最终包围盒、主轴填充、中心偏移、裁切、漂移、主视觉避让和人工观看舒适度；
 - Flow 锁定画幅/裁切/速度/动作/绝对时码与整幅插画原边框内缩放；
 - 解释文字形式、职责、可读性和退出；
 - 所有承担语义的气泡/票据/输入框/卡片；
@@ -92,10 +96,16 @@
 
 静态中点总览不能替代进入/核心/收束检查，也不能替代连续观看。
 
-Gate 3 的机器 QA 必须记录两个独立审计对象：
+Gate 3 的机器 QA 必须记录四个独立审计对象：
 
 1. `asset_class_scale_audit`：Flow 应比对数/实际比对数、本地组件应审核数/实际审核数、整幅插画应审核数/实际审核数、例外记录、边框违规数、裁切数、构图破坏数；所有对象必须覆盖，违规计数必须为 0。
 2. `caption_visual_hierarchy_audit`：上一版基线、本轮最小字号增量、中心方向位移范围、例外记录、对比策略、最差抽帧对比、保护区证据、单行溢出数、安全区违规数、主视觉/解释文字遮挡数；违规计数必须为 0。
+3. `native_container_text_audit`：沟通容器应审核数/实际审核数、父图层绑定、本地坐标、内部区域、透视、遮罩、溢出、漂浮覆盖、父子运动同步和可读性；绑定失败、出框、溢出、漂浮覆盖、不同步和不可读计数必须为 0。
+4. `adaptive_composition_fit_audit`：本地组件应审核数/实际审核数、逐镜基线/最终比例、最终包围盒、8%–12%目标、4%–15%微调范围、硬安全边界、主轴填充、中心偏移、裁切、漂移、遮挡、密度舒适度和例外记录；安全区、裁切、漂移、遮挡和不舒适密度计数必须为 0。
+
+`native_container_text_audit.records[]` 每条至少包含 `container_id`、`shot_id`、`parent_layer_id`、`text_source`、`coordinate_space`、`text_region_normalized`、`padding_percent`、`perspective_mode`、`minimum_font_px`，以及容器内、无溢出、透视匹配、遮罩、父子同步、无漂浮覆盖和可读标记。
+
+`adaptive_composition_fit_audit.records[]` 每条至少包含 `shot_id`、`baseline_scale`、`final_scale`、`scale_change_percent`、`final_bbox_px`、宽高填充比例、主轴填充比例、水平中心偏移、无裁切、无漂移、主视觉清晰、密度舒适和证据引用。偏离目标范围必须附批准理由；最终以连续观看舒适为准，不能只填写缩放数字。
 
 逐字幕证据清单的每条 `records[]` 必须至少包含 `cue_id`、`shot_id`、`baseline_font_px`、`final_font_px`、`required_increase_px`、`baseline_x_px`、`baseline_y_px`、`final_x_px`、`final_y_px`、`centerward_offset_px`，以及单行、溢出、安全区、主视觉和解释文字五项通过标记。坐标以最终编码画面的字幕中心锚点为准；校验器会根据画面中心重新计算基线与最终坐标的距离差，填报的 `centerward_offset_px` 必须与计算结果在 0.5px 容差内一致。零位移或反向避让必须逐条附批准原因和批准时间。
 
@@ -153,6 +163,7 @@ Gate 3 的机器 QA 必须记录两个独立审计对象：
 - 自动 QA 通过就宣称用户已验收；
 - 没有回退版就覆盖旧版；
 - 禁改项哈希漂移；
+- 组件内文字变成漂浮卡片，或放大后出画、漂移、过密、不可读；
 - 只看总览、不看连续区段和完整成片；
 - 桌面副本与工程母版哈希不一致；
 - 未授权删除中间产物；

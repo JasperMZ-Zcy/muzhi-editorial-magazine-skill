@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "project_id": "__FILL__",
   "project_root": "__FILL_ABSOLUTE_PROJECT_ROOT__",
   "revision": "v2",
@@ -32,10 +32,35 @@
     },
     "local_component_scale_percent": {
       "target_range": [8, 12],
+      "allowed_tuning_range": [4, 15],
       "per_shot_records_required": true,
       "below_range_requires_reason": true,
       "outside_or_zero_requires_approved_reason": true,
       "center_concentration_required": true
+    },
+    "native_container_text_binding": {
+      "required": true,
+      "local_compositor_required": true,
+      "parent_local_coordinates_required": true,
+      "clip_to_container_required": true,
+      "moves_with_parent_required": true,
+      "perspective_match_required": true,
+      "floating_overlay_allowed": false,
+      "per_container_records_required": true
+    },
+    "adaptive_composition_fit": {
+      "required": true,
+      "fit_mode": "contain",
+      "target_scale_change_percent_range": [8, 12],
+      "allowed_tuning_percent_range": [4, 15],
+      "hard_safe_bounds_px": {"left": 72, "top": 300, "right": 1008, "bottom": 1290},
+      "preferred_stage_bounds_px": {"left": 96, "top": 380, "right": 984, "bottom": 1280},
+      "preferred_primary_axis_fill_ratio_range": [0.72, 0.9],
+      "maximum_width_fill_ratio": 0.9,
+      "maximum_height_fill_ratio": 0.92,
+      "maximum_center_offset_x_px": 90,
+      "per_shot_tuning_required": true,
+      "safe_region_and_main_visual_protection_required": true
     },
     "full_illustration_inner_scale_percent": {
       "target_range": [4, 6],

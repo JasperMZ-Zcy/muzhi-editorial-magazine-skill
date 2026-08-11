@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "project_id": "__FILL__",
   "project_root": "__FILL_ABSOLUTE_PROJECT_ROOT__",
   "version": "v1",
@@ -33,6 +33,8 @@
     "all_semantic_stages_reviewed": false,
     "all_flow_and_full_illustrations_reviewed": false,
     "asset_class_scale_and_center_audit": false,
+    "native_container_text_audit": false,
+    "adaptive_composition_fit_audit": false,
     "longest_captions_final_resolution": false,
     "caption_hierarchy_contrast_and_safe_placement": false,
     "caption_main_visual_non_occlusion": false,
@@ -65,7 +67,9 @@
     "asset_scale_violation_count": 0,
     "caption_overflow_count": 0,
     "caption_safe_area_violation_count": 0,
-    "caption_main_visual_overlap_count": 0
+    "caption_main_visual_overlap_count": 0,
+    "native_container_text_violation_count": 0,
+    "adaptive_composition_fit_violation_count": 0
   },
   "asset_class_scale_audit": {
     "flow_locked_unchanged": true,
@@ -87,6 +91,42 @@
     "scale_exception_records_complete": true,
     "asset_record_manifest_path": "__FILL__",
     "asset_record_manifest_sha256": "__FILL_64_HEX__"
+  },
+  "native_container_text_audit": {
+    "communicative_container_expected_count": 0,
+    "communicative_container_reviewed_count": 0,
+    "per_container_records_complete": true,
+    "local_compositor_used": true,
+    "parent_local_coordinates_used": true,
+    "parent_binding_failure_count": 0,
+    "outside_container_count": 0,
+    "clipping_mask_failure_count": 0,
+    "perspective_mismatch_count": 0,
+    "text_overflow_count": 0,
+    "floating_overlay_count": 0,
+    "parent_motion_desync_count": 0,
+    "unreadable_count": 0,
+    "records_manifest_path": "__FILL__",
+    "records_manifest_sha256": "__FILL_64_HEX__"
+  },
+  "adaptive_composition_fit_audit": {
+    "local_component_expected_shots": 0,
+    "local_component_shots_reviewed": 0,
+    "per_shot_records_complete": true,
+    "fit_mode": "contain",
+    "target_scale_change_percent_range": [8, 12],
+    "allowed_tuning_percent_range": [4, 15],
+    "hard_safe_bounds_px": {"left": 72, "top": 300, "right": 1008, "bottom": 1290},
+    "preferred_stage_bounds_px": {"left": 96, "top": 380, "right": 984, "bottom": 1280},
+    "safe_bounds_violation_count": 0,
+    "critical_crop_count": 0,
+    "visual_drift_count": 0,
+    "main_visual_overlap_count": 0,
+    "uncomfortable_density_count": 0,
+    "underfilled_primary_visual_count": 0,
+    "exception_records_complete": true,
+    "records_manifest_path": "__FILL__",
+    "records_manifest_sha256": "__FILL_64_HEX__"
   },
   "caption_visual_hierarchy_audit": {
     "caption_expected_count": 0,

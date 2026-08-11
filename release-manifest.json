@@ -1,14 +1,24 @@
 {
     "schema_version":  1,
     "skill_name":  "editorial-magazine-explainer-producer",
-    "version":  "1.2.0",
-    "generated_at_utc":  "2026-08-11T03:40:30.5985727Z",
-    "file_count":  15,
+    "version":  "1.3.0",
+    "generated_at_utc":  "2026-08-11T14:43:53.5447930Z",
+    "file_count":  18,
     "files":  [
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/agents/openai.yaml",
-                      "sha256":  "4ef8f010e021bf001ae01b856fa3fdea0ee0c9f000ef4665933f4d51fda9938d",
-                      "bytes":  459
+                      "sha256":  "1f2323a183e32472764917994dad735ab4877c5f92f403a8877489a767669021",
+                      "bytes":  635
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/adaptive-composition-fit-records.template.json",
+                      "sha256":  "beb9b4b1e582895712e28819713f5bdfdb062a00de4c60bbb7eff3e65967831a",
+                      "bytes":  824
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/container-native-text-and-fit-plan.template.json",
+                      "sha256":  "9870ed1cfabe5d10d4f29ae5423b32f9fad4dc794234ad4a11e62da382e83b74",
+                      "bytes":  943
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/flow-shot-contract.template.json",
@@ -17,53 +27,58 @@
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/gate2-manifest.template.json",
-                      "sha256":  "8f3aa0ae81465c124c3835b388d1ce892d47c7f3ce3d5da094cd3e171bb497b2",
-                      "bytes":  1566
+                      "sha256":  "668ccb034a1b1d5ec17183ef65957989a181bd8eb4956489baf2dc76dda077b8",
+                      "bytes":  1770
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/native-container-text-records.template.json",
+                      "sha256":  "182594c3dfc0127b39da1931264ccb41aad0294d123d045b179538349344e40b",
+                      "bytes":  727
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/project-contract.template.json",
-                      "sha256":  "d06c347b03e3d4964f9a9c1897c016d865e1e35dbb92f4e4cdca3023daa76ba4",
-                      "bytes":  6684
+                      "sha256":  "58c93bfa573736c23c84dd7b7b98045354f09fabb5f674414de23fc4a1f59075",
+                      "bytes":  7979
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/qa-manifest.template.json",
-                      "sha256":  "8bcf87b4aa02c7cdb323e9039b5ba328674c730111243fd4b7d1e8224ec0dac2",
-                      "bytes":  4940
+                      "sha256":  "ac5004760e2f5c3487f60091b4ee092e535321737fa5bafbffdf9c584fe95135",
+                      "bytes":  6554
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/revision-lock.template.json",
-                      "sha256":  "8bfae9374bc0e0e64d6c4273ba4d60fc52ee46dd03fffaddf80740f6943a9eab",
-                      "bytes":  4614
+                      "sha256":  "aefce409e945c520fb7c7ff829977f554f545db8cad0a86960cfb34d6ae466cc",
+                      "bytes":  5679
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/shot-contract.template.json",
-                      "sha256":  "845ae006d35c57e228e2dc1f88bff1fe9a579660b280147644db8ff6f9d69ac5",
-                      "bytes":  2265
+                      "sha256":  "ec2e48e25d0eeab3a217d78c0f7cd84f858925a17238eec59aea5f0b7cf3be5c",
+                      "bytes":  3448
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/references/flow-audio-and-composition.md",
-                      "sha256":  "017c3d909ae1ccd9878010f49c455304d74021fedf7339ebddd0507f9688af8c",
-                      "bytes":  5232
+                      "sha256":  "2d5ae332823a8c50699bb3fb8934d56094c302287563f0afed0ff6289268ff45",
+                      "bytes":  5900
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/references/revision-qa-and-closure.md",
-                      "sha256":  "737657ddda9abee2c1ddba1a4698c8ecd77f23eb44568682f8ee13ee05237cb0",
-                      "bytes":  8350
+                      "sha256":  "4e6eda875c264fc3b70093f1ae71b691c0e0de7f247e5ab5a6d39da70eae2d98",
+                      "bytes":  10456
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/references/semantic-motion-and-typography.md",
-                      "sha256":  "3c20dad6c81cc9f21366cdd191e1caa0d5f67dcf4318d8e032dc8a488b911c52",
-                      "bytes":  8876
+                      "sha256":  "d59598db87715431878cec015c6f3577d9667fce0c2c7fc7ff39cec4557a4087",
+                      "bytes":  11113
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/references/validated-case-and-qa.md",
-                      "sha256":  "1695dfbf61866330084e20cb7a73fd32e2e13108c029e4532ba0d90889234b00",
-                      "bytes":  7397
+                      "sha256":  "eccecf7c2b197746cc195fcd30a0ba1aca1b9893354c3c3175fe4178cb6ca4d0",
+                      "bytes":  9980
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/references/workflow-and-review-gates.md",
-                      "sha256":  "f49a1e993de1ee87271d2a14aa907203e078a471a387ee250e00308bc7b309e0",
-                      "bytes":  7260
+                      "sha256":  "16243a0baf19055a241b3f9517349ca840ac980d82e0e3611d8a431d6d4b3ce6",
+                      "bytes":  7703
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/scripts/check_environment.ps1",
@@ -72,13 +87,13 @@
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/scripts/validate_editorial_project.py",
-                      "sha256":  "4e69f865e49c6f27467a302757464a0c3b1b4cd31d03249b687c5f684e5e01b7",
-                      "bytes":  121118
+                      "sha256":  "fb3d0a64505f6f7567d54a41df353d6527f546f7d5867ee8dec12eeb01dd994e",
+                      "bytes":  161843
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/SKILL.md",
-                      "sha256":  "b100e3ab1f92c9d936bdb6057fd84ed838496f5aeb85da5425268e2c25996405",
-                      "bytes":  17677
+                      "sha256":  "bddb8c48d9f6a2fedc9e96e5a145b530d0e9e49ba024e47d92148a7b1ce40d48",
+                      "bytes":  20024
                   }
               ]
 }

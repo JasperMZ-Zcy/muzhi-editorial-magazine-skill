@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.2",
   "project_id": "__FILL__",
   "project_root": "__FILL_ABSOLUTE_PROJECT_ROOT__",
   "status": "waiting_user_review",
@@ -20,7 +20,9 @@
       "multi_stage_keyframe_present": false,
       "independent_layer_plan_present": false,
       "layer_plan_path": "__FILL__",
-      "layer_plan_sha256": "__FILL_64_HEX__"
+      "layer_plan_sha256": "__FILL_64_HEX__",
+      "container_native_text_plan_present": false,
+      "adaptive_composition_fit_plan_present": false
     }
   ],
   "whole_film_artifacts": {
@@ -28,6 +30,7 @@
     "rhythm_density_audit": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
     "typography_role_and_form_audit": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
     "empty_semantic_container_audit": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    "container_native_text_and_fit_plan_audit": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
     "layer_exit_and_metaphor_audit": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
     "flow_shot_list": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
     "gate2_checklist": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"}
