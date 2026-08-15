@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "project_id": "replace-me",
+  "status": "release_ready_not_published",
+  "publication_authorized": false,
+  "master": {"path": "", "sha256": "", "matches_gate3_master": false},
+  "cover_png": {"path": "", "sha256": ""},
+  "cover_jpg": {"path": "", "sha256": ""},
+  "title_txt": {"path": "", "sha256": ""},
+  "description_and_five_topics_txt": {"path": "", "sha256": "", "topic_count": 5},
+  "pinned_comment_txt": {"path": "", "sha256": ""},
+  "prepublish_checklist_txt": {"path": "", "sha256": ""},
+  "version_and_hash_txt": {"path": "", "sha256": ""}
+}

@@ -8,7 +8,7 @@
 
 ![《考研统考名额》成片画面总览](examples/assets/quota-overview.jpg)
 
-当前版本：`1.3.0`　许可证：[MIT](LICENSE)　已验证环境：Windows、PowerShell、Codex
+当前版本：`1.4.0`　许可证：[MIT](LICENSE)　已验证环境：Windows、PowerShell、Codex
 
 ## 它解决什么问题
 

@@ -1,0 +1,54 @@
+{
+  "schema_version": "2.0",
+  "mode": "production",
+  "project_id": "replace-me",
+  "rule_layers": {
+    "immutable_core": ["master_clock", "gate2_stop", "semantic_motion", "layer_exit", "caption_readability", "speech_first_bgm", "evidence_qa", "separate_publish_authorization"],
+    "project_style": [],
+    "additive_requirements": [],
+    "revision_scope": [],
+    "core_rules_cannot_be_weakened": true,
+    "conflicts": []
+  },
+  "gate2": {
+    "approved": false,
+    "approval_quote": "",
+    "approved_at": "",
+    "render_started_after_approval": false,
+    "evidence": []
+  },
+  "shots": [],
+  "global_visual": {
+    "single_card_form_only": false,
+    "persistent_top_title": false,
+    "flow_change_count": 0,
+    "caption_main_visual_max_gap_px": 390,
+    "overlap_count": 0,
+    "evidence": []
+  },
+  "audio": {
+    "voice_duration_drift_ms": 0,
+    "voice_integrated_lufs": -16,
+    "bgm_integrated_lufs": -34,
+    "bgm_normal_lufs": -33,
+    "bgm_dense_lufs": -35,
+    "bgm_cta_lufs": -36,
+    "voice_bgm_margin_db": 18,
+    "final_integrated_lufs": -16,
+    "voice_path": "",
+    "bgm_ducked_path": "",
+    "final_mix_path": "",
+    "evidence": []
+  },
+  "qa": {
+    "full_decode_zero_errors": false,
+    "continuous_ranges_reviewed": false,
+    "full_watch_completed": false,
+    "desktop_hash_match": false,
+    "evidence": []
+  },
+  "publication": {
+    "authorized": false,
+    "performed": false
+  }
+}

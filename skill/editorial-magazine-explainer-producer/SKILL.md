@@ -9,6 +9,8 @@ description: 当用户要制作、继续、修改、验收、发布或复盘教�
 
 把本 Skill 当成该产线的执行控制器，而不是建议清单。任何硬 Gate、锁定项或一票否决未满足时，停止推进并说明缺口；不得用“先做出来再说”绕过。
 
+固定规程优先级不可颠倒：`不可变生产核心 → 项目风格 → 用户新增加法要求 → 本轮返工范围`。新增风格或单条反馈只能锦上添花，不得削弱母钟、Gate 2 真暂停、语义动画、图层退出、字幕可读、语音优先配乐、证据 QA 和发布另授权。
+
 工作区模式可继续使用正式产线与样式：
 
 - `<OPENMONTAGE_ROOT>\pipeline_defs\editorial-magazine-explainer.yaml`
@@ -87,13 +89,21 @@ python "<SKILL_ROOT>\scripts\validate_editorial_project.py" --project-contract <
 
 逐镜和 Gate 2 分别使用 `--shot-contract`、`--gate2-manifest`；返工或 Gate 3 追加 `--revision-lock`、`--qa-manifest`。正式 Gate 校验默认读取真实文件并重算哈希；`--skip-file-verification` 只供草拟结构，永远不能用来解锁生产。校验失败即 Gate 关闭。
 
+新项目或任何返工还必须从 `production-enforcement.template.json` 创建 `production-enforcement.json`，并运行：
+
+```powershell
+python "<SKILL_ROOT>\scripts\validate_production_enforcement.py" --manifest <PROJECT_ROOT>\artifacts\production-enforcement.json
+```
+
+正式生产只接受 schema 2.0 及以上；旧 schema 只供历史读取，不能解锁生产。四层优先级、逐镜语义/时序/生命周期/布局、三轨声音、证据文件和 18 项负向失败规则见 [production-enforcement-and-release.md](references/production-enforcement-and-release.md)。
+
 ## 3. 母钟与字幕先锁定
 
 1. 安全复制原始录音、定稿文案、SRT 和用户素材；保留原件。
 2. 复核录音时长、采样率、声道、末句和尾部完整性。
 3. 按真实录音语义对照文案，修正明确的错字、同音错误、无意义重复和断句；不改观点、不补造内容。
 4. 生成带时间戳 SRT，随后锁定字幕正文、条数、首尾时间和母钟。
-5. 建立词级定位，分别记录 `sceneStart`、`actionCue`、`textCue`。
+5. 建立词级定位，分别记录 `sceneStart`、`actionCue`、`textCue`、`resultCue`、`exitCue`。
 6. 未锁定母钟和 SRT 前，不设计正式逐镜动作。
 
 任何只改画面的返工都必须验证音频、字幕和时间轴指纹未变。
@@ -227,6 +237,12 @@ Flow、本地文字、青年明亮音和配乐合同见 [flow-audio-and-composit
 
 使用清晰中文版本名；核对工程母版与桌面副本 SHA-256 一致。Gate 3 交付后停止等待用户确认。
 
+## 11.5 Gate 3.5：发布包，不是发布
+
+用户确认成片后，创建单层发布包：不重编码的正式母版、三平台共用 PNG/JPG 封面、标题 TXT、简介与恰好五个话题 TXT、置顶评论 TXT、发布前检查清单 TXT、版本与 SHA-256 TXT、`gate35-release-manifest.json`。封面文字必须本地精确排版并位于中心安全区；发布母版哈希必须与 Gate 3 一致。
+
+Gate 3.5 状态只能写 `release_ready_not_published`。登录、上传、定时和发布属于 Gate 4，仍需单独授权。模板与验收字段见 [production-enforcement-and-release.md](references/production-enforcement-and-release.md)。
+
 ## 12. 收束、清理与发布闭环
 
 成片通过后：
@@ -260,4 +276,6 @@ Flow、本地文字、青年明亮音和配乐合同见 [flow-audio-and-composit
 - 本地主要元素仍小而分散、未经逐镜检查就整体等比放大，或整幅插画放大越过原边框；
 - 字幕层级低于背景、字号不舒适、没有向中心安全区优化，或遮挡主视觉/解释文字；
 - 未完整观看、未做桌面哈希核对就交付；
+- 正式生产仍使用旧 schema，或只用布尔勾选而没有真实证据文件；
+- 旁链后 BGM 全片或任一关键分段低到实质不可感知，只因总响度合格就宣称声音通过；
 - 把“成片通过”写成“已发布”，或未经授权代替用户发布。
