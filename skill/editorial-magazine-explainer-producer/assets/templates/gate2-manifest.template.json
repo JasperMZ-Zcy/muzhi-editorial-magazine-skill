@@ -1,10 +1,10 @@
 {
-  "schema_version": "1.2",
+  "schema_version": "2.0",
   "project_id": "__FILL__",
   "project_root": "__FILL_ABSOLUTE_PROJECT_ROOT__",
   "status": "waiting_user_review",
-  "expected_shot_count": 1,
-  "reviewed_shot_count": 0,
+  "actual_visual_unit_count": 1,
+  "reviewed_visual_unit_count": 0,
   "all_shot_ids": ["S01"],
   "shot_entries": [
     {
@@ -26,6 +26,13 @@
     }
   ],
   "whole_film_artifacts": {
+    "plain_language_director_brief": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    "director_storyboard_contract": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    "visual_storyboard": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    "full_voiced_animatic": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    "semantic_visual_routing_audit": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    "i2v_duration_coverage_audit": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
+    "new_bgm_brief_and_hash_comparison": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
     "keyframe_overview": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
     "rhythm_density_audit": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
     "typography_role_and_form_audit": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"},
@@ -36,6 +43,11 @@
     "gate2_checklist": {"path": "__FILL__", "sha256": "__FILL_64_HEX__"}
   },
   "approval": {
+    "director_interpretation_user_approved": false,
+    "visual_storyboard_user_approved": false,
+    "full_voiced_animatic_user_approved": false,
+    "brand_06_signoff": "pending",
+    "technical_07_signoff": "pending",
     "whole_package_user_approved": false,
     "approved_by": "牧之",
     "user_approval_quote": "__FILL__",

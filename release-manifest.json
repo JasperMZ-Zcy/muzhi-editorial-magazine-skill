@@ -1,14 +1,14 @@
-{
+﻿{
     "schema_version":  1,
     "skill_name":  "editorial-magazine-explainer-producer",
-    "version":  "1.3.0",
-    "generated_at_utc":  "2026-08-11T14:43:53.5447930Z",
-    "file_count":  18,
+    "version":  "2.0.0",
+    "generated_at_utc":  "2026-09-03T01:35:15.4985356Z",
+    "file_count":  41,
     "files":  [
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/agents/openai.yaml",
-                      "sha256":  "1f2323a183e32472764917994dad735ab4877c5f92f403a8877489a767669021",
-                      "bytes":  635
+                      "sha256":  "4dbdfb2aaba7bd8e23d67bf4ddd13c20fd386ce280d67fb03aa19d61b4c81e3b",
+                      "bytes":  1684
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/adaptive-composition-fit-records.template.json",
@@ -16,34 +16,79 @@
                       "bytes":  824
                   },
                   {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/bgm-registry.template.json",
+                      "sha256":  "219a6fff32cdc0013319ce2dc9dc0222c3982f46fcaa0275a896ef7c092ebbd2",
+                      "bytes":  697
+                  },
+                  {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/container-native-text-and-fit-plan.template.json",
-                      "sha256":  "9870ed1cfabe5d10d4f29ae5423b32f9fad4dc794234ad4a11e62da382e83b74",
-                      "bytes":  943
+                      "sha256":  "11b47cb8e43f32506993435a50105171dc4538cd8a4ca9e03622801bb74af071",
+                      "bytes":  1064
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/design.template.md",
+                      "sha256":  "fbe0752d5f2f7acf983accefe656af53465df355d07581f493cded81867e2b92",
+                      "bytes":  3871
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/design-lock.template.json",
+                      "sha256":  "27a086a19bd9cf0a5d2dd7f98943e2e159a0e96864194db47f3b1687e925d7c3",
+                      "bytes":  669
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/director-storyboard.template.json",
+                      "sha256":  "41d3b198cafe7a9872660219c872956fcd5019c3875f536d76529cbe8ee224e7",
+                      "bytes":  6583
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/dynamic-asset-duration-records.template.json",
+                      "sha256":  "589e06b0fdb085259f531237e81f2b235986f42ce2bcf17c6b44f0afdaba8560",
+                      "bytes":  1706
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/editorial-job-card.template.md",
+                      "sha256":  "1a5c2b1637c35da800d4e9572e34ebce16a53a84a605b9e6886bcdbff430ee84",
+                      "bytes":  3428
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/flow-shot-contract.template.json",
-                      "sha256":  "0136e46394fca244df37267941e18fc14e09119f9ce2ce3d83a45922f869c052",
-                      "bytes":  711
+                      "sha256":  "a7b6cc180389a368303301eec0287bffdf624f43671ee4471e75de7dd958d378",
+                      "bytes":  1247
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/gate2-manifest.template.json",
-                      "sha256":  "668ccb034a1b1d5ec17183ef65957989a181bd8eb4956489baf2dc76dda077b8",
-                      "bytes":  1770
+                      "sha256":  "1eb496165b1b961de5ad64aa2f1c40e958b2126ea8bedd6d5a2ae4538cb85f7f",
+                      "bytes":  2599
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/gate35-release-manifest.template.json",
+                      "sha256":  "113d3f5ddc6b137045998ae4e17c787506704eacba45cb7ea607054585cfadee",
+                      "bytes":  1018
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/motion-pilot-contract.template.json",
+                      "sha256":  "6bba1174a42e5287b3ceb7119b2812166345960cfc7165b41cc360ac762c9796",
+                      "bytes":  2188
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/native-container-text-records.template.json",
-                      "sha256":  "182594c3dfc0127b39da1931264ccb41aad0294d123d045b179538349344e40b",
-                      "bytes":  727
+                      "sha256":  "b768dd2ec824a71156e3844b079050180c0b3366b79b9d5b1f00ed3c8c137917",
+                      "bytes":  850
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/assets/templates/production-enforcement.template.json",
+                      "sha256":  "52cd37e2792f525b608f1495aafe9d3b4364e7ee2922a5e18ad14576bcd3593e",
+                      "bytes":  5068
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/project-contract.template.json",
-                      "sha256":  "58c93bfa573736c23c84dd7b7b98045354f09fabb5f674414de23fc4a1f59075",
-                      "bytes":  7979
+                      "sha256":  "e907100d018ca26f992d20af4cc942da9b62d284038268bfaaebf165fd3d8333",
+                      "bytes":  12699
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/qa-manifest.template.json",
-                      "sha256":  "ac5004760e2f5c3487f60091b4ee092e535321737fa5bafbffdf9c584fe95135",
-                      "bytes":  6554
+                      "sha256":  "f01d5a5d14a82c3d28ec4e9ad812efd3460264ff9e63899ecb2443e8648669f7",
+                      "bytes":  7227
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/revision-lock.template.json",
@@ -52,48 +97,118 @@
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/assets/templates/shot-contract.template.json",
-                      "sha256":  "ec2e48e25d0eeab3a217d78c0f7cd84f858925a17238eec59aea5f0b7cf3be5c",
-                      "bytes":  3448
+                      "sha256":  "77104892e09b0216e14deb72c6c167dde9055bf0ef369488cdb14e1aa57c1cb3",
+                      "bytes":  4911
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/references/design-board-and-broll-pipeline.md",
+                      "sha256":  "a6ba09b880033473162068d12bcfb8050e57edd0dd1faae48545613fbdbda1a5",
+                      "bytes":  7745
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/references/director-storyboard-and-visual-routing.md",
+                      "sha256":  "63aceee42ff00a858bc22c9b44f101b3f9a915b2e35c2dbdba7000acf0c2fc1c",
+                      "bytes":  13486
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/references/flow-audio-and-composition.md",
-                      "sha256":  "2d5ae332823a8c50699bb3fb8934d56094c302287563f0afed0ff6289268ff45",
-                      "bytes":  5900
+                      "sha256":  "0bb30c68f287e568ee3ec4cb4b94e88e097c0fae976da560bc0c6650add023e5",
+                      "bytes":  9152
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/references/golden-baseline-and-motion-pilot.md",
+                      "sha256":  "146f6b62230939286166dba79d298bd15788c11ea48f072acdfde632d3e07d41",
+                      "bytes":  5407
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/references/production-enforcement-and-release.md",
+                      "sha256":  "a7488245b8121d559f6de0e1e8c0a9bda8470be5bb12ecbdcd1d54faedee17d6",
+                      "bytes":  7579
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/references/revision-qa-and-closure.md",
-                      "sha256":  "4e6eda875c264fc3b70093f1ae71b691c0e0de7f247e5ab5a6d39da70eae2d98",
-                      "bytes":  10456
+                      "sha256":  "a1663ff2933fbbea26fe43b8be2a27c0af4c95c9f519aa2dabc2b943ed3671ca",
+                      "bytes":  11955
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/references/runtime-production-playbook.md",
+                      "sha256":  "694774695088d58c1f4e51cba5efdad849e5944c207fb413302ea96843b8d52d",
+                      "bytes":  6958
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/references/semantic-motion-and-typography.md",
-                      "sha256":  "d59598db87715431878cec015c6f3577d9667fce0c2c7fc7ff39cec4557a4087",
-                      "bytes":  11113
+                      "sha256":  "1a40080efebd918b7c547e1d1b422a531d59d5c39b2358f3b6f79492226d90ef",
+                      "bytes":  15528
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/references/validated-case-and-qa.md",
-                      "sha256":  "eccecf7c2b197746cc195fcd30a0ba1aca1b9893354c3c3175fe4178cb6ca4d0",
-                      "bytes":  9980
+                      "sha256":  "12f635910c9ac6de5dc4c7aea3b7ffbfc1c0dec0ee97f5b871211f0a2bb5bf99",
+                      "bytes":  16018
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/references/workflow-and-review-gates.md",
-                      "sha256":  "16243a0baf19055a241b3f9517349ca840ac980d82e0e3611d8a431d6d4b3ce6",
-                      "bytes":  7703
+                      "sha256":  "d9cdfbdbb0680c7a8909284e448f80bf0432a22b8715d43fc38ad43305d73201",
+                      "bytes":  16986
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/scripts/check_environment.ps1",
-                      "sha256":  "4a4cd612b57976ad668f3d86f863ed60a7e8df1ca28264db77e0ac94c9dd72e9",
-                      "bytes":  4433
+                      "sha256":  "59defa9129b79b4a763304ac5b86bb50635a9395a2545759e15bcd8e17c71f19",
+                      "bytes":  5018
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/scripts/fingerprint_bgm.py",
+                      "sha256":  "a4f8ff5b36a5f158d3126b294d9b6314099060f2c3dc558ad07064c71ae39265",
+                      "bytes":  1861
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/scripts/test_director_storyboard.py",
+                      "sha256":  "6a732ae258b83dcf8a73355333c5b14f6ececc1e8654859b24df223b30d4e689",
+                      "bytes":  23652
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/scripts/test_dynamic_asset_duration.py",
+                      "sha256":  "47b3ca78fe408878363303a8972e50eb692e18f7e42f1ba88fdbad5a0d72339c",
+                      "bytes":  8271
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/scripts/test_production_enforcement.py",
+                      "sha256":  "6197c589b5d32f69fbf455ccc4ca3daffe664762fbcb4a10e83b2fa1c1e138e2",
+                      "bytes":  18091
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/scripts/validate_design_lock.py",
+                      "sha256":  "cf13d31812489539f251c91991a3d598354811ee2ccb92da0ba4f72f397def67",
+                      "bytes":  4345
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/scripts/validate_director_storyboard.py",
+                      "sha256":  "170e1f884f4b033a3cb258ad9935d710e3147d8a156c9b00e84981eb8f59ae57",
+                      "bytes":  40372
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/scripts/validate_dynamic_asset_duration.py",
+                      "sha256":  "7bb6e450832e8a78896c9744c619fe10d1d97445da760135b193a408814f600e",
+                      "bytes":  16819
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/scripts/validate_editorial_project.py",
-                      "sha256":  "fb3d0a64505f6f7567d54a41df353d6527f546f7d5867ee8dec12eeb01dd994e",
-                      "bytes":  161843
+                      "sha256":  "4cd6dd38fd914f041fae9388f88e06361899d1e0c8a3786737232d69e952b147",
+                      "bytes":  166196
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/scripts/validate_motion_pilot.py",
+                      "sha256":  "53353790f7b2e06d25a73d4b20232c336c8d8a5c3da069aea2380ee01fe23c0f",
+                      "bytes":  14379
+                  },
+                  {
+                      "path":  "skill/editorial-magazine-explainer-producer/scripts/validate_production_enforcement.py",
+                      "sha256":  "b573dee936306a4d7f0141f0b257156ca4a39a9215755d2f17a8313f30c65ee8",
+                      "bytes":  23183
                   },
                   {
                       "path":  "skill/editorial-magazine-explainer-producer/SKILL.md",
-                      "sha256":  "bddb8c48d9f6a2fedc9e96e5a145b530d0e9e49ba024e47d92148a7b1ce40d48",
-                      "bytes":  20024
+                      "sha256":  "d8691a7e5e7406910a303710723e24e2dd91f7cfb455828041a08eba88f1649d",
+                      "bytes":  39326
                   }
               ]
 }

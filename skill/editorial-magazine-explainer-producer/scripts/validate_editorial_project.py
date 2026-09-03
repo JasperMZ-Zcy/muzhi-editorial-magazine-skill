@@ -70,6 +70,14 @@ QA_1_2_CHECKS = {
     "native_container_text_audit",
     "adaptive_composition_fit_audit",
 }
+QA_2_0_CHECKS = {
+    "director_storyboard_batch_gate",
+    "full_voiced_animatic_approved",
+    "semantic_visual_routing_audit",
+    "official_source_and_chart_footer_audit",
+    "i2v_duration_and_padding_audit",
+    "new_bgm_for_project_and_hash_difference",
+}
 SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 PLACEHOLDER_RE = re.compile(r"^__FILL(?:_OR_[A-Z]+|_[A-Z0-9_]+)?__$")
 REQUIRED_GATE_KEYS = (
@@ -91,6 +99,15 @@ REQUIRED_GATE2_WHOLE_FILM_ARTIFACTS = (
 )
 GATE2_1_2_WHOLE_FILM_ARTIFACTS = (
     "container_native_text_and_fit_plan_audit",
+)
+GATE2_2_0_WHOLE_FILM_ARTIFACTS = (
+    "plain_language_director_brief",
+    "director_storyboard_contract",
+    "visual_storyboard",
+    "full_voiced_animatic",
+    "semantic_visual_routing_audit",
+    "i2v_duration_coverage_audit",
+    "new_bgm_brief_and_hash_comparison",
 )
 REQUIRED_LOCK_DOMAINS = {
     "audio",
@@ -559,6 +576,22 @@ def validate_project(data: dict[str, Any], verify_files: bool = False) -> list[s
     authorization = as_object(data.get("authorization"), "authorization", errors)
     require_true(authorization, "execution_confirmed", "authorization", errors)
 
+    if schema_at_least(data, 1, 4):
+        production_clock = as_object(data.get("production_clock"), "production_clock", errors)
+        require_true(
+            production_clock,
+            "starts_after_locked_script_evidence_and_final_audio",
+            "production_clock",
+            errors,
+        )
+        for key in ("locked_script_ready", "evidence_pack_ready", "final_narration_ready", "same_day_delivery_target"):
+            require_true(production_clock, key, "production_clock", errors)
+        require_filled(production_clock, "started_at", "production_clock", errors)
+        if production_clock.get("fixed_stage_time_limits") is not False:
+            errors.append("production_clock.fixed_stage_time_limits: must be false")
+        if production_clock.get("quality_gates_may_be_skipped_for_deadline") is not False:
+            errors.append("production_clock.quality_gates_may_be_skipped_for_deadline: must be false")
+
     sources = as_object(data.get("sources"), "sources", errors)
     input_mode = sources.get("input_mode")
     if input_mode not in {"recording_plus_approved_copy", "recording_plus_srt", "approved_copy_only"}:
@@ -566,6 +599,8 @@ def validate_project(data: dict[str, Any], verify_files: bool = False) -> list[s
     require_filled(sources, "original_audio", "sources", errors)
     if input_mode in {"recording_plus_approved_copy", "approved_copy_only"}:
         require_filled(sources, "approved_copy", "sources", errors)
+    if schema_at_least(data, 1, 4):
+        require_filled(sources, "evidence_pack", "sources", errors)
     if input_mode == "recording_plus_srt":
         require_filled(sources, "input_srt", "sources", errors)
     require_true(sources, "originals_preserved", "sources", errors)
@@ -626,6 +661,18 @@ def validate_project(data: dict[str, Any], verify_files: bool = False) -> list[s
     if bgm.get("required") is True:
         for key in ("no_lyrics", "speech_first", "fade_in_out", "sidechain_ducking", "provenance_required"):
             require_true(bgm, key, "bgm", errors)
+        if schema_at_least(data, 1, 4):
+            require_filled(bgm, "music_brief", "bgm", errors)
+            require_filled(bgm, "provider_or_source", "bgm", errors)
+            require_true(bgm, "newly_created_or_newly_licensed_for_project", "bgm", errors)
+            if bgm.get("reused_from_previous_project") is not False:
+                errors.append("bgm.reused_from_previous_project: must be false")
+
+    if schema_at_least(data, 1, 4):
+        gates = as_object(data.get("gates"), "gates", errors)
+        for key in ("gate_2a_director_interpretation", "gate_2d_design_lock", "gate_2s_full_storyboard", "gate_2m_full_voiced_animatic", "gate_2p_motion_pilot", "gate_2b_full_production_map"):
+            if key not in gates:
+                errors.append(f"gates.{key}: required Gate key is missing")
 
     gates = as_object(data.get("gates"), "gates", errors)
     for key in REQUIRED_GATE_KEYS:
@@ -1278,10 +1325,18 @@ def validate_gate2_manifest(data: dict[str, Any], verify_files: bool = False) ->
         errors.append("gate2_manifest.all_shot_ids: every shot ID must be filled")
     if len(set(normalized_ids)) != len(normalized_ids):
         errors.append("gate2_manifest.all_shot_ids: duplicate shot ID")
-    if data.get("expected_shot_count") != len(normalized_ids):
-        errors.append("gate2_manifest.expected_shot_count: must equal all_shot_ids count")
-    if data.get("reviewed_shot_count") != len(normalized_ids):
-        errors.append("gate2_manifest.reviewed_shot_count: every shot must be reviewed before approval")
+    if schema_at_least(data, 2, 0):
+        if "expected_shot_count" in data:
+            errors.append("gate2_manifest.expected_shot_count: fixed target field is forbidden in schema 2.0")
+        if data.get("actual_visual_unit_count") != len(normalized_ids):
+            errors.append("gate2_manifest.actual_visual_unit_count: must equal the derived all_shot_ids count")
+        if data.get("reviewed_visual_unit_count") != len(normalized_ids):
+            errors.append("gate2_manifest.reviewed_visual_unit_count: every actual visual unit must be reviewed")
+    else:
+        if data.get("expected_shot_count") != len(normalized_ids):
+            errors.append("gate2_manifest.expected_shot_count: must equal all_shot_ids count")
+        if data.get("reviewed_shot_count") != len(normalized_ids):
+            errors.append("gate2_manifest.reviewed_shot_count: every shot must be reviewed before approval")
     entries = as_list(data.get("shot_entries"), "gate2_manifest.shot_entries", errors)
     entry_ids: list[str] = []
     for index, raw_entry in enumerate(entries):
@@ -1339,6 +1394,8 @@ def validate_gate2_manifest(data: dict[str, Any], verify_files: bool = False) ->
     required_gate2_artifacts = REQUIRED_GATE2_WHOLE_FILM_ARTIFACTS
     if schema_at_least(data, 1, 2):
         required_gate2_artifacts += GATE2_1_2_WHOLE_FILM_ARTIFACTS
+    if schema_at_least(data, 2, 0):
+        required_gate2_artifacts += GATE2_2_0_WHOLE_FILM_ARTIFACTS
     for key in required_gate2_artifacts:
         item = as_object(artifacts.get(key), f"gate2_manifest.whole_film_artifacts.{key}", errors)
         verify_path_hash(
@@ -1351,6 +1408,14 @@ def validate_gate2_manifest(data: dict[str, Any], verify_files: bool = False) ->
         )
     approval = as_object(data.get("approval"), "gate2_manifest.approval", errors)
     require_true(approval, "whole_package_user_approved", "gate2_manifest.approval", errors)
+    if schema_at_least(data, 2, 0):
+        require_true(approval, "director_interpretation_user_approved", "gate2_manifest.approval", errors)
+        require_true(approval, "visual_storyboard_user_approved", "gate2_manifest.approval", errors)
+        require_true(approval, "full_voiced_animatic_user_approved", "gate2_manifest.approval", errors)
+        if approval.get("brand_06_signoff") != "pass":
+            errors.append("gate2_manifest.approval.brand_06_signoff: must equal pass")
+        if approval.get("technical_07_signoff") != "pass":
+            errors.append("gate2_manifest.approval.technical_07_signoff: must equal pass")
     require_filled(approval, "approved_by", "gate2_manifest.approval", errors)
     require_filled(approval, "user_approval_quote", "gate2_manifest.approval", errors)
     require_filled(approval, "approved_at", "gate2_manifest.approval", errors)
@@ -1545,7 +1610,9 @@ def validate_qa(data: dict[str, Any], verify_files: bool = False) -> list[str]:
     if data.get("status") != "pass":
         errors.append("qa.status: must equal pass")
     checks = as_object(data.get("checks"), "qa.checks", errors)
-    if schema_at_least(data, 1, 2):
+    if schema_at_least(data, 2, 0):
+        required_qa_checks = REQUIRED_QA_CHECKS + tuple(sorted(QA_2_0_CHECKS))
+    elif schema_at_least(data, 1, 2):
         required_qa_checks = REQUIRED_QA_CHECKS
     elif schema_at_least(data, 1, 1):
         required_qa_checks = tuple(key for key in REQUIRED_QA_CHECKS if key not in QA_1_2_CHECKS)
@@ -1576,6 +1643,17 @@ def validate_qa(data: dict[str, Any], verify_files: bool = False) -> list[str]:
         zero_metrics.extend((
             "native_container_text_violation_count",
             "adaptive_composition_fit_violation_count",
+        ))
+    if schema_at_least(data, 2, 0):
+        zero_metrics.extend((
+            "exact_information_routed_to_pure_i2v_count",
+            "official_source_missing_count",
+            "sourced_chart_footer_missing_count",
+            "i2v_duration_shortfall_without_continuation_count",
+            "forced_slow_freeze_loop_or_static_flash_count",
+            "previous_bgm_reuse_count",
+            "official_evidence_not_design_integrated_count",
+            "empty_background_text_only_count",
         ))
     for key in zero_metrics:
         if metrics.get(key) != 0:

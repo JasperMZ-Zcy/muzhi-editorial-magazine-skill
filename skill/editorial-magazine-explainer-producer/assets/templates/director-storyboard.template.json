@@ -1,0 +1,199 @@
+{
+  "schema_version": "1.0",
+  "mode": "production",
+  "project_id": "__FILL__",
+  "project_root": "__FILL_ABSOLUTE_PROJECT_ROOT__",
+  "production_clock": {
+    "starts_after_locked_script_evidence_and_audio": true,
+    "locked_script_ready": false,
+    "evidence_pack_ready": false,
+    "final_narration_ready": false,
+    "started_at": "",
+    "same_day_delivery_target": true,
+    "fixed_stage_time_limits": false,
+    "quality_gates_may_be_skipped_for_deadline": false
+  },
+  "director_interpretation": {
+    "core_promise": "__FILL__",
+    "audience_starting_question": "__FILL__",
+    "opening_first_3_seconds_value": "__FILL__",
+    "opening_first_10_seconds_value": "__FILL__",
+    "final_takeaway": "__FILL__",
+    "desired_audience_action": "__FILL__",
+    "narrative_arc": ["__FILL__"],
+    "user_approved": false,
+    "approval_quote": "",
+    "approved_at": ""
+  },
+  "planning_policy": {
+    "fixed_chapter_count": null,
+    "fixed_shot_count": null,
+    "actual_visual_segment_count": 1,
+    "visual_segment_count_is_derived": true,
+    "segment_count_driven_by_semantics": true,
+    "viewer_comprehension_before_cut": true,
+    "provider_typical_max_i2v_seconds": 10,
+    "forced_slow_motion_allowed": false,
+    "freeze_frame_padding_allowed": false,
+    "meaningless_loop_padding_allowed": false,
+    "static_flash_padding_allowed": false
+  },
+  "audio_coverage": {
+    "master_audio_path": "__FILL__",
+    "master_audio_sha256": "__FILL_64_HEX__",
+    "locked_srt_path": "__FILL__",
+    "locked_srt_sha256": "__FILL_64_HEX__",
+    "duration_seconds": 0,
+    "coverage_start_seconds": 0,
+    "coverage_end_seconds": 0,
+    "gap_seconds": 0,
+    "overlap_seconds": 0,
+    "tolerance_seconds": 0.1
+  },
+  "storyboard_artifacts": {
+    "plain_language_director_brief_path": "__FILL__",
+    "plain_language_director_brief_sha256": "__FILL_64_HEX__",
+    "visual_storyboard_path": "__FILL__",
+    "visual_storyboard_sha256": "__FILL_64_HEX__",
+    "mobile_9x16_preview": true,
+    "all_text_bearing_segments_previewed": true
+  },
+  "visual_segments": [
+    {
+      "id": "V01",
+      "start_seconds": 0,
+      "end_seconds": 8,
+      "spoken_text": "__FILL__",
+      "semantic_event_id": "E01",
+      "srt_cue_ids": ["C01"],
+      "new_primary_reason": "__FILL__",
+      "continuation_of": null,
+      "audience_question": "__FILL__",
+      "audience_takeaway": "__FILL__",
+      "content_function": "hook",
+      "visual_route": "image_to_video",
+      "route_reason": "__FILL__",
+      "requires_exact_text": false,
+      "requires_exact_data": false,
+      "entry": "__FILL__",
+      "settle": "__FILL__",
+      "explain": "__FILL__",
+      "animation_beats": ["__FILL__"],
+      "readable_hold_seconds": 0.8,
+      "exit": "__FILL__",
+      "transition_to_next": "__FILL__",
+      "screen_text": [],
+      "evidence": [],
+      "chart_plan": {
+        "self_drawn": false,
+        "source_footer_required": false,
+        "source_footer_text": "",
+        "source_ids": []
+      },
+      "i2v_plan": {
+        "used": true,
+        "provider": "__FILL__",
+        "requested_seconds": 8,
+        "planned_coverage_seconds": 8,
+        "continuation_plan": "",
+        "approved_reference_frames": ["__FILL__"],
+        "model_generates_core_readable_chinese": false
+      },
+      "hybrid_plan": {
+        "used": false,
+        "unique_primary_visual": true,
+        "i2v_responsibility": "",
+        "native_data_or_text_layer_id": "",
+        "i2v_receives_exact_text_or_data": false,
+        "auxiliary_layer_exit": ""
+      },
+      "container_plan": {
+        "communicative_container_count": 0,
+        "blank_communicative_container_count": 0,
+        "all_text_uses_parent_local_coordinates": true,
+        "detached_overlay_text_count": 0,
+        "container_records": []
+      },
+      "mobile_readability": {
+        "core_content_in_center_safe_area": true,
+        "caption_conflict_count": 0,
+        "viewer_can_read_before_exit": true
+      }
+    }
+  ],
+  "full_voiced_animatic": {
+    "required": true,
+    "path": "__FILL__",
+    "sha256": "__FILL_64_HEX__",
+    "probe_report_path": "__FILL__",
+    "probe_report_sha256": "__FILL_64_HEX__",
+    "has_video_stream": true,
+    "has_audio_stream": true,
+    "duration_seconds": 0,
+    "uses_locked_narration": true,
+    "uses_locked_caption_style": true,
+    "covers_full_runtime": true,
+    "missing_visual_segment_count": 0,
+    "forced_slow_or_freeze_count": 0,
+    "user_approved": false,
+    "approval_quote": "",
+    "approved_at": ""
+  },
+  "music": {
+    "required": true,
+    "user_opted_out": false,
+    "brief": {
+      "theme_and_mood": "__FILL__",
+      "energy_arc": "__FILL__",
+      "instrumentation_and_texture": "__FILL__",
+      "speech_role": "__FILL__",
+      "no_vocals": true
+    },
+    "newly_created_or_newly_licensed_for_project": true,
+    "reused_from_previous_project": false,
+    "provider_or_source": "__FILL__",
+    "canonical_track_id": "__FILL_PROVIDER_JOB_OR_LICENSE_ID__",
+    "generation_or_license_record": "__FILL__",
+    "generation_or_license_record_path": "__FILL__",
+    "generation_or_license_record_sha256": "__FILL_64_HEX__",
+    "asset_path": "__FILL__",
+    "asset_sha256": "__FILL_64_HEX__",
+    "previous_project_bgm_sha256": "__FILL_OR_EMPTY__",
+    "previous_project_canonical_track_id": "__FILL_OR_EMPTY__",
+    "audio_fingerprint": "__FILL_PERCEPTUAL_OR_PROVIDER_FINGERPRINT__",
+    "audio_window_fingerprints": ["__FILL__"],
+    "bgm_registry_path": "__FILL__",
+    "bgm_registry_sha256": "__FILL_64_HEX__",
+    "registry_checked": true,
+    "registry_match_count": 0,
+    "user_approved_reuse_exception": false,
+    "reuse_exception_quote": "",
+    "reuse_exception_approved_at": "",
+    "ducking_planned": true,
+    "full_runtime_coverage_planned": true
+  },
+  "approval": {
+    "storyboard_user_approved": false,
+    "storyboard_approval_quote": "",
+    "storyboard_approved_at": "",
+    "brand_06_signoff": {
+      "status": "pending",
+      "department": "06｜品牌设计部",
+      "signer_id": "__FILL__",
+      "signed_at": "__FILL__",
+      "reviewed_visual_storyboard_sha256": "__FILL_64_HEX__",
+      "evidence_path": "__FILL__",
+      "evidence_sha256": "__FILL_64_HEX__"
+    },
+    "technical_07_signoff": {
+      "status": "pending",
+      "department": "07｜技术管家",
+      "signer_id": "__FILL__",
+      "signed_at": "__FILL__",
+      "reviewed_visual_storyboard_sha256": "__FILL_64_HEX__",
+      "evidence_path": "__FILL__",
+      "evidence_sha256": "__FILL_64_HEX__"
+    },
+    "batch_generation_allowed": false
+  }
+}

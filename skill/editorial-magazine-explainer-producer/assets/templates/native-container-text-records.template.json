@@ -5,6 +5,7 @@
       "container_id": "S01-C01",
       "shot_id": "S01",
       "parent_layer_id": "S01-L01",
+      "container_render_mode": "native_component",
       "text_source": "local_compositor",
       "coordinate_space": "parent_local",
       "text_region_normalized": {"x": 0.12, "y": 0.18, "width": 0.76, "height": 0.48},
@@ -17,6 +18,8 @@
       "overflow_absent": true,
       "perspective_matched": true,
       "floating_overlay_absent": true,
+      "fit_attempt_count": 1,
+      "native_fallback_triggered": false,
       "readable": true,
       "evidence_ref": "__FILL_KEYFRAME_OR_TEMPORAL_SWEEP_EVIDENCE__"
     }

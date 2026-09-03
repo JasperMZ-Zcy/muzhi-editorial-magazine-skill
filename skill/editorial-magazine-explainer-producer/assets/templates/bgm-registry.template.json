@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "entries": [
+    {
+      "project_id": "__FILL__",
+      "title": "__FILL__",
+      "status": "approved_or_published",
+      "provider_or_source": "__FILL__",
+      "canonical_track_id": "__FILL_PROVIDER_JOB_OR_LICENSE_ID__",
+      "generation_or_license_record_path": "__FILL__",
+      "generation_or_license_record_sha256": "__FILL_64_HEX__",
+      "asset_path": "__FILL__",
+      "asset_sha256": "__FILL_64_HEX__",
+      "audio_fingerprint": "__FILL_PERCEPTUAL_OR_PROVIDER_FINGERPRINT__",
+      "audio_window_fingerprints": ["__FILL__"],
+      "approved_at": "__FILL__",
+      "user_approved_reuse_exception": false,
+      "reuse_exception_quote": ""
+    }
+  ]
+}

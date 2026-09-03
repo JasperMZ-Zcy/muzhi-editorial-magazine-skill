@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "project_id": "__PROJECT_ID__",
+  "design_path": "design.md",
+  "design_sha256": "__DESIGN_SHA256__",
+  "status": "waiting_user_review",
+  "approval": {
+    "approved_by": "",
+    "approval_quote": "",
+    "approved_at": ""
+  },
+  "style_references": [
+    {
+      "path": "__STYLE_REFERENCE_PATH__",
+      "sha256": "__STYLE_REFERENCE_SHA256__",
+      "role": "character_or_scene_or_palette_or_motion"
+    }
+  ],
+  "supplier_policy": {
+    "image_generation_reads_design_md": true,
+    "image_to_video_requires_approved_frames": true,
+    "image_to_video_may_redefine_style": false,
+    "generated_readable_chinese_allowed": false
+  }
+}

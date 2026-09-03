@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.2",
+  "schema_version": "2.0",
   "shot_id": "S01",
   "start_seconds": 0,
   "end_seconds": 3,
@@ -11,6 +11,11 @@
   "turn": "__FILL_OR_NONE__",
   "result": "__FILL__",
   "viewer_takeaway": "__FILL__",
+  "audience_question": "__FILL__",
+  "content_function": "answer",
+  "visual_route": "native_mg",
+  "visual_route_reason": "__FILL__",
+  "fixed_shot_count_target": null,
   "shot_family": "independent_component_animation",
   "family_reason": "__FILL__",
   "stable_primary_composition_seconds": 3,
@@ -72,6 +77,33 @@
       "decorative_reason": ""
     }
   ],
+  "source_and_chart_plan": {
+    "requires_exact_text": true,
+    "requires_exact_data": false,
+    "uses_official_material": false,
+    "official_source_path_or_url": "__FILL_IF_USED__",
+    "official_source_title": "__FILL_IF_USED__",
+    "official_source_verified": false,
+    "self_drawn_chart": false,
+    "source_footer_required": false,
+    "source_footer_text": "__FILL_IF_USED__",
+    "project_evidence_path": "__FILL__",
+    "project_evidence_sha256": "__FILL_64_HEX__"
+  },
+  "image_to_video_plan": {
+    "used": false,
+    "provider": "__FILL_IF_USED__",
+    "typical_provider_max_seconds": 10,
+    "requested_seconds": 0,
+    "planned_coverage_seconds": 0,
+    "continuation_or_replacement_plan": "__FILL_IF_NEEDED__",
+    "approved_reference_frames": [],
+    "model_generates_core_readable_chinese": false,
+    "forced_slow_motion_allowed": false,
+    "freeze_frame_padding_allowed": false,
+    "meaningless_loop_padding_allowed": false,
+    "static_flash_padding_allowed": false
+  },
   "adaptive_composition_fit": {
     "required": true,
     "fit_mode": "contain",
@@ -102,6 +134,12 @@
     "whole_image_motion_as_semantic_animation",
     "generated_readable_chinese",
     "empty_communicative_container",
+    "fixed_shot_count_or_split_for_count",
+    "exact_data_or_policy_text_generated_by_i2v",
+    "official_material_without_source",
+    "self_drawn_chart_without_source_footer",
+    "i2v_shorter_than_spoken_segment_without_continuation",
+    "forced_slow_freeze_loop_or_static_flash_padding",
     "detached_overlay_text_for_semantic_container",
     "uniform_global_scale_without_per_shot_fit",
     "production_markers_in_final_frame"

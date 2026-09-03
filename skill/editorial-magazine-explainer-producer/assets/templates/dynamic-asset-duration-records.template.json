@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "project_id": "__FILL__",
+  "project_root": "__FILL_ABSOLUTE_PROJECT_ROOT__",
+  "ffprobe_required": true,
+  "actual_record_count": 1,
+  "records": [
+    {
+      "visual_segment_id": "V01",
+      "spoken_start_seconds": 0,
+      "spoken_end_seconds": 8,
+      "required_coverage_seconds": 8,
+      "asset_path": "__FILL__",
+      "asset_sha256": "__FILL_64_HEX__",
+      "declared_source_duration_seconds": 8,
+      "timeline_used_seconds": 8,
+      "timeline_start_seconds": 0,
+      "timeline_end_seconds": 8,
+      "maximum_continuous_i2v_seconds": 10,
+      "over_limit_exception_approved": false,
+      "over_limit_exception_quote": "",
+      "over_limit_exception_approved_at": "",
+      "playback_speed": 1.0,
+      "intentional_retiming_approved": false,
+      "intentional_retiming_approval_reason": "",
+      "continuation_segments": [],
+      "forced_freeze_seconds": 0,
+      "meaningless_loop_count": 0,
+      "intentional_motion_loop_approved": false,
+      "intentional_motion_loop_approval_quote": "",
+      "intentional_motion_loop_approved_at": "",
+      "static_flash_padding_count": 0,
+      "maximum_allowed_unexplained_freeze_seconds": 0.8,
+      "intentional_freeze_approved": false,
+      "intentional_freeze_approval_reason": "",
+      "director_storyboard_route": "image_to_video",
+      "content_matches_approved_segment": true
+    }
+  ],
+  "summary": {
+    "reviewed_record_count": 0,
+    "duration_probe_failure_count": 0,
+    "hash_mismatch_count": 0,
+    "shortfall_without_continuation_count": 0,
+    "forced_slow_count": 0,
+    "freeze_loop_or_static_flash_padding_count": 0,
+    "content_mismatch_count": 0,
+    "status": "in_progress"
+  }
+}
