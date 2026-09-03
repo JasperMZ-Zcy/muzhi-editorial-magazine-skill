@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.2",
+  "schema_version": "2.0",
   "project_id": "__FILL__",
   "project_root": "__FILL_ABSOLUTE_PROJECT_ROOT__",
   "version": "v1",
@@ -30,6 +30,12 @@
     "flow_source_audio_absent": false,
     "caption_coverage_and_last_sentence": false,
     "locked_fingerprints_match": false,
+    "director_storyboard_batch_gate": false,
+    "full_voiced_animatic_approved": false,
+    "semantic_visual_routing_audit": false,
+    "official_source_and_chart_footer_audit": false,
+    "i2v_duration_and_padding_audit": false,
+    "new_bgm_for_project_and_hash_difference": false,
     "all_semantic_stages_reviewed": false,
     "all_flow_and_full_illustrations_reviewed": false,
     "asset_class_scale_and_center_audit": false,
@@ -70,6 +76,14 @@
     "caption_main_visual_overlap_count": 0,
     "native_container_text_violation_count": 0,
     "adaptive_composition_fit_violation_count": 0
+    ,"exact_information_routed_to_pure_i2v_count": 0
+    ,"official_source_missing_count": 0
+    ,"sourced_chart_footer_missing_count": 0
+    ,"i2v_duration_shortfall_without_continuation_count": 0
+    ,"forced_slow_freeze_loop_or_static_flash_count": 0
+    ,"previous_bgm_reuse_count": 0
+    ,"official_evidence_not_design_integrated_count": 0
+    ,"empty_background_text_only_count": 0
   },
   "asset_class_scale_audit": {
     "flow_locked_unchanged": true,

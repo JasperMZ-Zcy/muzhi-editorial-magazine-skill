@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.1",
+  "project_id": "__FILL__",
+  "project_root": "__FILL_ABSOLUTE_PROJECT_ROOT__",
+  "title": "__FILL__",
+  "status": "draft",
+  "golden_baseline": {
+    "asset_id": "__FILL_APPROVED_BASELINE_ID__",
+    "reference_path": "__FILL__",
+    "source_master_sha256": "__FILL_64_HEX__",
+    "ninety_percent_locked": true,
+    "maximum_upgrade_percent": 10
+  },
+  "upstream_gates": {
+    "director_interpretation_user_approved": false,
+    "visual_storyboard_user_approved": false,
+    "full_voiced_animatic_user_approved": false,
+    "director_storyboard_contract_path": "__FILL__",
+    "director_storyboard_contract_sha256": "__FILL_64_HEX__",
+    "new_project_bgm_path": "__FILL__",
+    "new_project_bgm_sha256": "__FILL_64_HEX__",
+    "previous_project_bgm_sha256": "__FILL_64_HEX_OR_EMPTY__",
+    "brand_06_signoff": "pending",
+    "technical_07_signoff": "pending"
+  },
+  "pilot": {
+    "path": "__FILL_WHEN_RENDERED__",
+    "sha256": "__FILL_64_HEX_WHEN_RENDERED__",
+    "duration_seconds": 0,
+    "hardest_representative_section": true,
+    "real_narration": true,
+    "final_caption_style": true,
+    "flow_or_equivalent_organic_action": true,
+    "local_semantic_animation": true,
+    "data_or_evidence_scene": true,
+    "object_based_handoff": true,
+    "actual_voice_processing_sample": true,
+    "actual_music_sample": true
+  },
+  "preapproval_budget": {
+    "image_generation_calls_used": 0,
+    "image_generation_call_cap": 10,
+    "flow_tests_used": 0,
+    "flow_test_cap": 2
+  },
+  "forbidden_before_approval": {
+    "batch_asset_generation_started": false,
+    "full_flow_batch_started": false,
+    "full_formal_production_timeline_created": false,
+    "full_audio_processing_started": false,
+    "final_master_render_started": false
+  },
+  "aesthetic_vetoes": {
+    "ppt_like": false,
+    "cheap_ai_like": false,
+    "style_inconsistent": false,
+    "stiff_animation": false
+  },
+  "human_review": {
+    "approved_by": "牧之",
+    "approval_quote": "__FILL_WHEN_APPROVED__",
+    "approved_at": "__FILL_WHEN_APPROVED__"
+  },
+  "batch_release_allowed": false,
+  "notes": "新样片机制在首次真实重点片验证前不得宣称已经跑通。"
+}

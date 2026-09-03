@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.1",
+  "project_id": "replace-me",
+  "status": "release_ready_not_published",
+  "publication_authorized": false,
+  "master": {"path": "", "sha256": "", "matches_gate3_master": false},
+  "cover_png": {"path": "", "sha256": ""},
+  "cover_jpg": {"path": "", "sha256": ""},
+  "title_txt": {"path": "", "sha256": ""},
+  "description_and_five_topics_txt": {"path": "", "sha256": "", "topic_count": 5},
+  "pinned_comment_txt": {"path": "", "sha256": ""},
+  "prepublish_checklist_txt": {"path": "", "sha256": ""},
+  "version_and_hash_txt": {"path": "", "sha256": ""},
+  "recipient_state_audit": {
+    "pre_receipt_cta_only_in_video_post_and_pinned_comment": true,
+    "delivered_student_assets_present": false,
+    "delivered_asset_paths": [],
+    "delivered_assets_have_brand_watermark": false,
+    "delivered_assets_have_usage_instructions": false,
+    "delivered_assets_repeat_comment_to_receive_cta_count": 0,
+    "video_frame_qr_code_count": 0,
+    "approved_private_asset_qr_code_count": 0
+  }
+}

@@ -197,14 +197,28 @@ if ($null -ne $existingConfig -and $existingMode -eq $selectedMode -and
 }
 New-Item -ItemType Directory -Path $desktopReviewRoot -Force | Out-Null
 
+$bgmRegistryPath = if ($null -ne $resolvedWorkspace) {
+    Join-Path $resolvedWorkspace 'OpenMontage\assets\教培动画素材库\03-音频\bgm-registry.json'
+} else {
+    Join-Path $CodexHome 'data\editorial-magazine-explainer\bgm-registry.json'
+}
+if ($null -ne $existingConfig -and $existingMode -eq $selectedMode -and
+    -not [string]::IsNullOrWhiteSpace([string]$existingConfig.bgm_registry_path)) {
+    $bgmRegistryPath = [string]$existingConfig.bgm_registry_path
+}
+if (-not (Test-Path -LiteralPath $bgmRegistryPath -PathType Leaf)) {
+    Write-Utf8NoBom -Path $bgmRegistryPath -Content "{`n  `"schema_version`": `"1.0`",`n  `"entries`": []`n}"
+}
+
 $config = [ordered]@{
-    schema_version = 2
+    schema_version = 3
     skill_name = $skillName
     mode = $selectedMode
     workspace_root = if ($null -ne $resolvedWorkspace) { $resolvedWorkspace } else { '' }
     openmontage_root = if ($null -ne $resolvedWorkspace) { Join-Path $resolvedWorkspace 'OpenMontage' } else { '' }
     knowledge_base_root = if ($null -ne $resolvedWorkspace) { Join-Path $resolvedWorkspace 'OpenMontage\创业知识库' } else { '' }
     desktop_review_root = $desktopReviewRoot
+    bgm_registry_path = $bgmRegistryPath
     configured_at_utc = [DateTime]::UtcNow.ToString('o')
 }
 Write-Utf8NoBom -Path (Join-Path $staging 'config\local.json') -Content ($config | ConvertTo-Json -Depth 5)

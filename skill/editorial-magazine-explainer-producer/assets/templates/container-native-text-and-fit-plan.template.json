@@ -7,8 +7,10 @@
   "all_local_fit_plans_complete": false,
   "execution_order": [
     "inventory_communicative_containers",
+    "classify_native_component_generated_shell_or_decorative",
     "bind_text_in_parent_local_coordinates",
     "fit_padding_type_perspective_and_mask",
+    "switch_to_native_component_after_second_failed_fit",
     "group_parent_and_native_text",
     "adaptively_scale_and_center_each_local_shot",
     "review_entry_core_exit_and_full_watch"

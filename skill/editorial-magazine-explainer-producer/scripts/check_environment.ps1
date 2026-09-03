@@ -55,6 +55,8 @@ $configStatus = [ordered]@{
     knowledge_base_root = ''
     desktop_review_root = ''
     desktop_review_exists = $false
+    bgm_registry_path = ''
+    bgm_registry_exists = $false
 }
 
 if ($configStatus.exists) {
@@ -69,14 +71,17 @@ if ($configStatus.exists) {
         $configStatus.knowledge_base_root = [string]$config.knowledge_base_root
         $configStatus.desktop_review_root = [string]$config.desktop_review_root
         $configStatus.desktop_review_exists = Test-Path -LiteralPath $configStatus.desktop_review_root -PathType Container
+        $configStatus.bgm_registry_path = [string]$config.bgm_registry_path
+        $configStatus.bgm_registry_exists = Test-Path -LiteralPath $configStatus.bgm_registry_path -PathType Leaf
         if ($configStatus.mode -eq 'standalone') {
-            $configStatus.valid = $configStatus.desktop_review_exists
+            $configStatus.valid = $configStatus.desktop_review_exists -and $configStatus.bgm_registry_exists
         } elseif ($configStatus.mode -eq 'workspace') {
             $configStatus.valid =
                 (Test-Path -LiteralPath $configStatus.workspace_root -PathType Container) -and
                 (Test-Path -LiteralPath $configStatus.openmontage_root -PathType Container) -and
                 (Test-Path -LiteralPath $configStatus.knowledge_base_root -PathType Container) -and
-                $configStatus.desktop_review_exists
+                $configStatus.desktop_review_exists -and
+                $configStatus.bgm_registry_exists
         }
     } catch {
         $configStatus.valid = $false
@@ -104,6 +109,10 @@ foreach ($check in $checks) {
 }
 $configMark = if ($configStatus.valid) { '√' } else { '×' }
 Write-Host "[$configMark] 本机运行模式与配置（$($configStatus.mode)）：$($configStatus.path)"
+if (-not [string]::IsNullOrWhiteSpace($configStatus.bgm_registry_path)) {
+    $bgmMark = if ($configStatus.bgm_registry_exists) { '√' } else { '×' }
+    Write-Host "[$bgmMark] 全项目BGM登记册：$($configStatus.bgm_registry_path)"
+}
 if (-not $configStatus.valid) {
     Write-Warning 'Skill 已安装，但环境或本机配置尚不完整；缺项不会被自动安装。'
 }

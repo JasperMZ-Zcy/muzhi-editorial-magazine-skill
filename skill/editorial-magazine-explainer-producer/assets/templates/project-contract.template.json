@@ -1,18 +1,38 @@
 {
-  "schema_version": "1.2",
+  "schema_version": "1.4",
   "pipeline": "editorial-magazine-explainer",
   "project_id": "__FILL__",
   "project_root": "__FILL_ABSOLUTE_PROJECT_ROOT__",
   "title": "__FILL__",
+  "creative_baseline": {
+    "baseline_id": "__FILL_APPROVED_BASELINE_ID__",
+    "master_path": "__FILL_APPROVED_BASELINE_PATH__",
+    "master_sha256": "__FILL_APPROVED_BASELINE_SHA256__",
+    "inheritance_target_percent": 90,
+    "topic_specific_upgrade_cap_percent": 10,
+    "locked_dimensions": ["illustration_style", "composition_order", "motion_grammar", "caption_hierarchy", "audio_relationship", "brand_ending"],
+    "approved": false
+  },
   "authorization": {
     "execution_confirmed": false,
     "publication_authorized": false,
     "confirmed_at": "__FILL__"
   },
+  "production_clock": {
+    "starts_after_locked_script_evidence_and_final_audio": true,
+    "locked_script_ready": false,
+    "evidence_pack_ready": false,
+    "final_narration_ready": false,
+    "started_at": "__FILL__",
+    "same_day_delivery_target": true,
+    "fixed_stage_time_limits": false,
+    "quality_gates_may_be_skipped_for_deadline": false
+  },
   "sources": {
     "input_mode": "recording_plus_approved_copy",
     "original_audio": "__FILL__",
     "approved_copy": "__FILL__",
+    "evidence_pack": "__FILL__",
     "input_srt": "__FILL_OR_NULL__",
     "originals_preserved": false
   },
@@ -64,6 +84,21 @@
     "fade_in_out": true,
     "sidechain_ducking": true,
     "provenance_required": true,
+    "music_brief": "__FILL__",
+    "newly_created_or_newly_licensed_for_project": true,
+    "reused_from_previous_project": false,
+    "previous_project_bgm_sha256": "__FILL_64_HEX_OR_EMPTY__",
+    "provider_or_source": "__FILL__",
+    "canonical_track_id": "__FILL_PROVIDER_JOB_OR_LICENSE_ID__",
+    "generation_or_license_record_path": "__FILL__",
+    "generation_or_license_record_sha256": "__FILL_64_HEX__",
+    "original_path": "__FILL_WHEN_GENERATED__",
+    "original_sha256": "__FILL_WHEN_GENERATED__",
+    "audio_fingerprint": "__FILL_PERCEPTUAL_OR_PROVIDER_FINGERPRINT__",
+    "bgm_registry_path": "__FILL__",
+    "bgm_registry_sha256": "__FILL_64_HEX__",
+    "bgm_registry_match_count": 0,
+    "used_in_full_voiced_animatic": false,
     "formal_path": "__FILL_WHEN_RENDER_READY__",
     "formal_sha256": "__FILL_WHEN_RENDER_READY__",
     "mix_report_path": "__FILL_WHEN_RENDER_READY__",
@@ -75,8 +110,15 @@
   "gates": {
     "gate_0": "approved",
     "gate_1": "in_progress",
+    "gate_2a_director_interpretation": "not_started",
+    "gate_2d_design_lock": "not_started",
+    "gate_2s_full_storyboard": "not_started",
+    "gate_2m_full_voiced_animatic": "not_started",
+    "gate_2p_motion_pilot": "not_started",
+    "gate_2b_full_production_map": "not_started",
     "gate_2": "not_started",
     "gate_2_5_flow_handoff": "not_started",
+    "gate_2_8_complete_rough_cut": "not_started",
     "gate_3": "not_started",
     "gate_4_publication": "not_started"
   },
@@ -94,6 +136,63 @@
       "user_approval_quote": "__FILL__",
       "approved_at": "__FILL__"
     },
+    "gate_2a": {
+      "director_brief_path": "__FILL__",
+      "director_brief_sha256": "__FILL__",
+      "fixed_chapter_or_shot_count": null,
+      "approved": false,
+      "approved_by": "牧之",
+      "user_approval_quote": "__FILL__",
+      "approved_at": "__FILL__"
+    },
+    "gate_2s": {
+      "director_storyboard_contract_path": "__FILL__",
+      "director_storyboard_contract_sha256": "__FILL__",
+      "visual_storyboard_path": "__FILL__",
+      "visual_storyboard_sha256": "__FILL__",
+      "full_audio_coverage": false,
+      "approved": false,
+      "approved_by": "牧之",
+      "user_approval_quote": "__FILL__",
+      "approved_at": "__FILL__"
+    },
+    "gate_2m": {
+      "full_voiced_animatic_path": "__FILL__",
+      "full_voiced_animatic_sha256": "__FILL__",
+      "uses_locked_narration": false,
+      "uses_new_project_bgm": false,
+      "missing_visual_segment_count": 0,
+      "forced_slow_or_freeze_count": 0,
+      "approved": false,
+      "approved_by": "牧之",
+      "user_approval_quote": "__FILL__",
+      "approved_at": "__FILL__"
+    },
+    "gate_2p": {
+      "motion_pilot_contract_path": "__FILL__",
+      "motion_pilot_contract_sha256": "__FILL__",
+      "pilot_video_path": "__FILL__",
+      "pilot_video_sha256": "__FILL__",
+      "whole_pilot_user_approved": false,
+      "approved_by": "牧之",
+      "user_approval_quote": "__FILL__",
+      "approved_at": "__FILL__"
+    },
+    "gate_2b": {
+      "manifest_path": "__FILL__",
+      "manifest_sha256": "__FILL__",
+      "all_shots_included": false,
+      "created_after_storyboard_animatic_and_motion_pilot_approval": false
+    },
+    "gate_2_8": {
+      "rough_cut_path": "__FILL__",
+      "rough_cut_sha256": "__FILL__",
+      "complete_from_start_to_end": false,
+      "user_approved_rough_cut": false,
+      "approved_by": "牧之",
+      "user_approval_quote": "__FILL__",
+      "approved_at": "__FILL__"
+    },
     "gate_3": {
       "qa_manifest_path": "__FILL__",
       "qa_manifest_sha256": "__FILL__",
@@ -103,11 +202,34 @@
       "approved_at": "__FILL__"
     }
   },
+  "motion_pilot": {
+    "required": true,
+    "duration_seconds_min": 15,
+    "duration_seconds_max": 20,
+    "selected_hardest_section": "__FILL__",
+    "uses_real_voice": false,
+    "uses_locked_captions": false,
+    "uses_real_assets": false,
+    "uses_real_motion": false,
+    "uses_real_audio_relationship": false,
+    "image_generation_call_cap": 10,
+    "image_generation_calls_used": 0,
+    "flow_test_call_cap": 2,
+    "flow_test_calls_used": 0,
+    "aesthetic_vetoes": {
+      "looks_like_ppt": false,
+      "looks_like_cheap_ai": false,
+      "style_inconsistent": false,
+      "motion_stiff": false
+    },
+    "directional_failure_count": 0,
+    "batch_production_released": false
+  },
   "local_production_started": false,
   "final_composition_started": false,
   "shots": [
     {
-      "schema_version": "1.2",
+      "schema_version": "2.0",
       "shot_id": "S01",
       "start_seconds": 0,
       "end_seconds": 3,
@@ -119,6 +241,11 @@
       "turn": "__FILL_OR_NONE__",
       "result": "__FILL__",
       "viewer_takeaway": "__FILL__",
+      "audience_question": "__FILL__",
+      "content_function": "answer",
+      "visual_route": "native_mg",
+      "visual_route_reason": "__FILL__",
+      "fixed_shot_count_target": null,
       "shot_family": "independent_component_animation",
       "family_reason": "__FILL__",
       "stable_primary_composition_seconds": 3,
